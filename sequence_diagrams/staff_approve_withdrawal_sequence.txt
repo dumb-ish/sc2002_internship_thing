@@ -1,0 +1,75 @@
+@startuml
+
+skinparam sequence {
+    ArrowColor Black
+    ActorBorderColor Black
+    LifeLineBorderColor Black
+    BoxBorderColor Black
+    ParticipantBorderColor Black
+    ParticipantBackgroundColor White
+    ActorBackgroundColor White
+}
+
+actor Staff
+participant InternshipSystem
+participant IOManager
+participant ApplicationManager
+participant InternshipManager
+database "Application Database"
+
+Staff -> InternshipSystem: viewWithdrawalRequests()
+activate InternshipSystem
+
+InternshipSystem -> ApplicationManager: getWithdrawalRequests()
+activate ApplicationManager
+ApplicationManager --> InternshipSystem: withdrawal requests
+deactivate ApplicationManager
+
+InternshipSystem -> IOManager: displayWithdrawalRequests(requests)
+activate IOManager
+IOManager --> Staff: show requests
+deactivate IOManager
+
+Staff -> InternshipSystem: processWithdrawalRequest(requestId, approved)
+activate InternshipSystem
+
+InternshipSystem -> ApplicationManager: getApplication(requestId)
+activate ApplicationManager
+ApplicationManager --> InternshipSystem: application
+deactivate ApplicationManager
+
+alt approved
+    InternshipSystem -> ApplicationManager: removeApplication(application)
+    activate ApplicationManager
+    
+    ApplicationManager -> "Application Database": remove application
+    activate "Application Database"
+    "Application Database" --> ApplicationManager: success
+    deactivate "Application Database"
+    
+    ApplicationManager --> InternshipSystem: success
+    deactivate ApplicationManager
+
+    InternshipSystem -> IOManager: showMessage("Withdrawal approved")
+else not approved
+    InternshipSystem -> ApplicationManager: updateApplication(application, "Pending")
+    activate ApplicationManager
+    
+    ApplicationManager -> "Application Database": update status
+    activate "Application Database"
+    "Application Database" --> ApplicationManager: success
+    deactivate "Application Database"
+    
+    ApplicationManager --> InternshipSystem: success
+    deactivate ApplicationManager
+
+    InternshipSystem -> IOManager: showMessage("Withdrawal rejected")
+end
+
+activate IOManager
+IOManager --> Staff: result message
+deactivate IOManager
+
+deactivate InternshipSystem
+
+@enduml

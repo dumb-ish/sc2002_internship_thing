@@ -1,0 +1,70 @@
+@startuml
+
+skinparam sequence {
+    ArrowColor Black
+    ActorBorderColor Black
+    LifeLineBorderColor Black
+    BoxBorderColor Black
+    ParticipantBorderColor Black
+    ParticipantBackgroundColor White
+    ActorBackgroundColor White
+}
+
+actor Student
+participant InternshipSystem
+participant IOManager
+participant InternshipManager
+participant ApplicationManager
+participant InternshipFilter
+participant "InternshipOpportunity"
+
+Student -> InternshipSystem: viewInternshipOpportunities()
+activate InternshipSystem
+
+InternshipSystem -> InternshipManager: getVisibleOpportunities(student)
+activate InternshipManager
+
+InternshipManager -> InternshipFilter: apply(opportunities)
+activate InternshipFilter
+InternshipFilter --> InternshipManager: filtered opportunities
+deactivate InternshipFilter
+
+InternshipManager --> InternshipSystem: available opportunities
+deactivate InternshipManager
+
+InternshipSystem -> IOManager: displayOpportunities(opportunities)
+activate IOManager
+IOManager --> Student: show opportunities
+deactivate IOManager
+
+Student -> InternshipSystem: applyForInternship(internshipId)
+activate InternshipSystem
+
+InternshipSystem -> InternshipManager: getInternshipOpportunityById(internshipId)
+activate InternshipManager
+InternshipManager --> InternshipSystem: opportunity
+deactivate InternshipManager
+
+alt opportunity exists and is available
+    InternshipSystem -> "InternshipOpportunity": hasReachedApplicationLimit()
+    activate "InternshipOpportunity"
+    "InternshipOpportunity" --> InternshipSystem: limitStatus
+    deactivate "InternshipOpportunity"
+
+    alt application limit not reached
+        InternshipSystem -> ApplicationManager: addApplication(application)
+        activate ApplicationManager
+        ApplicationManager --> InternshipSystem: success
+        deactivate ApplicationManager
+
+        InternshipSystem -> IOManager: showMessage("Application successful")
+    else limit reached
+        InternshipSystem -> IOManager: showMessage("Application limit reached")
+    end
+else opportunity not available
+    InternshipSystem -> IOManager: showMessage("Opportunity not available")
+end
+
+deactivate InternshipSystem
+
+@enduml

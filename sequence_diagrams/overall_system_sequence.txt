@@ -1,0 +1,129 @@
+@startuml
+
+skinparam sequence {
+    ArrowColor Black
+    ActorBorderColor Black
+    LifeLineBorderColor Black
+    BoxBorderColor Black
+    ParticipantBorderColor Black
+    ParticipantBackgroundColor White
+    ActorBackgroundColor White
+}
+
+actor User
+participant InternshipSystem
+participant AuthenticationManager
+participant InternshipManager
+participant ApplicationManager
+participant IOManager
+participant InternshipFilter
+database "User Database"
+database "Internship Database"
+database "Application Database"
+
+== System Initialization ==
+InternshipSystem -> AuthenticationManager: initializeSystem()
+activate AuthenticationManager
+AuthenticationManager -> "User Database": load users
+"User Database" --> AuthenticationManager: users loaded
+deactivate AuthenticationManager
+
+InternshipSystem -> InternshipManager: initializeSystem()
+activate InternshipManager
+InternshipManager -> "Internship Database": load opportunities
+"Internship Database" --> InternshipManager: opportunities loaded
+deactivate InternshipManager
+
+InternshipSystem -> ApplicationManager: initializeSystem()
+activate ApplicationManager
+ApplicationManager -> "Application Database": load applications
+"Application Database" --> ApplicationManager: applications loaded
+deactivate ApplicationManager
+
+== User Authentication ==
+User -> InternshipSystem: login(userId, password)
+activate InternshipSystem
+InternshipSystem -> AuthenticationManager: authenticateUser(userId, password)
+activate AuthenticationManager
+AuthenticationManager -> "User Database": verify credentials
+"User Database" --> AuthenticationManager: validation result
+AuthenticationManager --> InternshipSystem: authentication result
+deactivate AuthenticationManager
+
+== User Actions ==
+alt Student User
+    InternshipSystem -> InternshipManager: getVisibleOpportunities()
+    activate InternshipManager
+    InternshipManager -> InternshipFilter: apply(opportunities)
+    InternshipFilter --> InternshipManager: filtered opportunities
+    InternshipManager --> InternshipSystem: available opportunities
+    deactivate InternshipManager
+
+    User -> InternshipSystem: applyForInternship()
+    InternshipSystem -> ApplicationManager: createApplication()
+    activate ApplicationManager
+    ApplicationManager -> "Application Database": save application
+    "Application Database" --> ApplicationManager: success
+    deactivate ApplicationManager
+
+else Company Representative
+    User -> InternshipSystem: createInternship()
+    InternshipSystem -> InternshipManager: addInternshipOpportunity()
+    activate InternshipManager
+    InternshipManager -> "Internship Database": save opportunity
+    "Internship Database" --> InternshipManager: success
+    deactivate InternshipManager
+
+else Career Center Staff
+    User -> InternshipSystem: approveApplications()
+    InternshipSystem -> ApplicationManager: updateApplicationStatus()
+    activate ApplicationManager
+    ApplicationManager -> "Application Database": update status
+    "Application Database" --> ApplicationManager: success
+    deactivate ApplicationManager
+end
+
+== System Updates ==
+loop Periodic Updates
+    InternshipSystem -> InternshipManager: updateOpportunityStatus()
+    activate InternshipManager
+    InternshipManager -> "Internship Database": update statuses
+    "Internship Database" --> InternshipManager: success
+    deactivate InternshipManager
+
+    InternshipSystem -> ApplicationManager: updateApplicationStatus()
+    activate ApplicationManager
+    ApplicationManager -> "Application Database": update statuses
+    "Application Database" --> ApplicationManager: success
+    deactivate ApplicationManager
+end
+
+== User Interface ==
+User -> InternshipSystem: performAction()
+activate InternshipSystem
+InternshipSystem -> IOManager: displayMenu()
+activate IOManager
+IOManager --> User: show options
+deactivate IOManager
+
+User -> IOManager: input
+activate IOManager
+IOManager -> InternshipSystem: processInput()
+deactivate IOManager
+
+InternshipSystem -> IOManager: showResult()
+activate IOManager
+IOManager --> User: display result
+deactivate IOManager
+deactivate InternshipSystem
+
+== System Shutdown ==
+User -> InternshipSystem: logout()
+activate InternshipSystem
+InternshipSystem -> AuthenticationManager: logout()
+AuthenticationManager -> AuthenticationManager: clearCurrentUser()
+InternshipSystem -> IOManager: showLogoutMessage()
+IOManager --> User: goodbye message
+deactivate InternshipSystem
+
+@enduml

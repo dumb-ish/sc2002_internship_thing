@@ -1,0 +1,74 @@
+@startuml
+
+skinparam sequence {
+    ArrowColor Black
+    ActorBorderColor Black
+    LifeLineBorderColor Black
+    BoxBorderColor Black
+    ParticipantBorderColor Black
+    ParticipantBackgroundColor White
+    ActorBackgroundColor White
+}
+
+actor Student
+participant InternshipSystem
+participant IOManager
+participant ApplicationManager
+participant InternshipManager
+database "Application Database"
+
+Student -> InternshipSystem: viewSuccessfulApplications()
+activate InternshipSystem
+
+InternshipSystem -> ApplicationManager: getSuccessfulApplications(studentId)
+activate ApplicationManager
+ApplicationManager --> InternshipSystem: successful applications
+deactivate ApplicationManager
+
+InternshipSystem -> IOManager: displaySuccessfulApplications(applications)
+activate IOManager
+IOManager --> Student: show applications
+deactivate IOManager
+
+Student -> InternshipSystem: acceptInternship(applicationId)
+activate InternshipSystem
+
+InternshipSystem -> ApplicationManager: getApplication(applicationId)
+activate ApplicationManager
+ApplicationManager --> InternshipSystem: application
+deactivate ApplicationManager
+
+InternshipSystem -> InternshipManager: getInternshipOpportunityById(application.internshipId)
+activate InternshipManager
+InternshipManager --> InternshipSystem: opportunity
+deactivate InternshipManager
+
+alt opportunity available
+    InternshipSystem -> ApplicationManager: updateApplication(application, "Accepted")
+    activate ApplicationManager
+    
+    ApplicationManager -> "Application Database": update status
+    activate "Application Database"
+    "Application Database" --> ApplicationManager: success
+    deactivate "Application Database"
+    
+    ApplicationManager --> InternshipSystem: success
+    deactivate ApplicationManager
+
+    InternshipSystem -> ApplicationManager: removeOtherApplications(studentId, applicationId)
+    activate ApplicationManager
+    ApplicationManager --> InternshipSystem: success
+    deactivate ApplicationManager
+
+    InternshipSystem -> IOManager: showMessage("Internship accepted")
+else opportunity not available
+    InternshipSystem -> IOManager: showMessage("Opportunity no longer available")
+end
+
+activate IOManager
+IOManager --> Student: result message
+deactivate IOManager
+
+deactivate InternshipSystem
+
+@enduml

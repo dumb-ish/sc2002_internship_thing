@@ -1,0 +1,80 @@
+@startuml
+
+skinparam sequence {
+    ArrowColor Black
+    ActorBorderColor Black
+    LifeLineBorderColor Black
+    BoxBorderColor Black
+    ParticipantBorderColor Black
+    ParticipantBackgroundColor White
+    ActorBackgroundColor White
+}
+
+actor CompanyRep
+participant InternshipSystem
+participant IOManager
+participant InternshipManager
+database "Internship Database"
+
+CompanyRep -> InternshipSystem: createInternshipOpportunity()
+activate InternshipSystem
+
+InternshipSystem -> IOManager: getInput("Enter Title")
+activate IOManager
+IOManager --> InternshipSystem: title
+deactivate IOManager
+
+InternshipSystem -> IOManager: getInput("Enter Description")
+activate IOManager
+IOManager --> InternshipSystem: description
+deactivate IOManager
+
+InternshipSystem -> IOManager: getInput("Enter Level")
+activate IOManager
+IOManager --> InternshipSystem: level
+deactivate IOManager
+
+InternshipSystem -> IOManager: getInput("Enter Preferred Major")
+activate IOManager
+IOManager --> InternshipSystem: major
+deactivate IOManager
+
+InternshipSystem -> IOManager: getDateInput("Enter Opening Date")
+activate IOManager
+IOManager --> InternshipSystem: openingDate
+deactivate IOManager
+
+InternshipSystem -> IOManager: getDateInput("Enter Closing Date")
+activate IOManager
+IOManager --> InternshipSystem: closingDate
+deactivate IOManager
+
+InternshipSystem -> IOManager: getIntInput("Enter Number of Slots")
+activate IOManager
+IOManager --> InternshipSystem: slots
+deactivate IOManager
+
+InternshipSystem -> InternshipManager: getNextOpportunityId()
+activate InternshipManager
+InternshipManager --> InternshipSystem: opportunityId
+deactivate InternshipManager
+
+InternshipSystem -> InternshipManager: addInternshipOpportunity(opportunity)
+activate InternshipManager
+
+InternshipManager -> "Internship Database": save opportunity
+activate "Internship Database"
+"Internship Database" --> InternshipManager: success
+deactivate "Internship Database"
+
+InternshipManager --> InternshipSystem: success
+deactivate InternshipManager
+
+InternshipSystem -> IOManager: showMessage("Internship created successfully")
+activate IOManager
+IOManager --> CompanyRep: success message
+deactivate IOManager
+
+deactivate InternshipSystem
+
+@enduml

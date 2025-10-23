@@ -1,0 +1,286 @@
+@startuml
+
+' Layout settings for straight lines and better spacing
+skinparam linetype ortho
+left to right direction
+skinparam nodesep 150
+skinparam ranksep 80
+skinparam padding 3
+skinparam ArrowColor Black
+skinparam ClassBorderColor Black
+
+' Font settings for larger text
+skinparam defaultFontSize 32
+skinparam classFontSize 34
+skinparam stereotypeFontSize 32
+skinparam classAttributeFontSize 32
+skinparam classMethodsFontSize 32
+
+' Class appearance
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    BorderThickness 1.5
+    AttributeFontSize 32
+    StereotypeFontSize 32
+    BackgroundColor White
+    HeaderBackgroundColor White
+    StereotypeFontStyle plain
+    MinimumWidth 200
+}
+
+' Arrow settings for straight lines
+skinparam ArrowThickness 2
+skinparam ArrowFontSize 32
+skinparam ArrowColor Black
+skinparam linetype ortho
+
+' Spacing settings
+skinparam Padding 1
+skinparam ParticipantPadding 0
+skinparam BoxPadding 0
+skinparam ActivityBorderThickness 1.5
+
+' Group related classes together
+together {
+  class Student
+  class CareerCenterStaff
+  class CompanyRepresentative
+}
+
+' Filter Class for handling internship filtering
+class InternshipFilter {
+  - String status
+  - String preferredMajor
+  - String level
+  - LocalDate closingDate
+  - boolean sortAlphabetically
+  - int studentYear
+  + InternshipFilter()
+  + void setStatus(String status)
+  + void setPreferredMajor(String major)
+  + void setLevel(String level)
+  + void setClosingDate(LocalDate date)
+  + void setSortAlphabetically(boolean sort)
+  + void setStudentYear(int year)
+  + List<InternshipOpportunity> apply(List<InternshipOpportunity> opportunities)
+  - boolean isEligibleForLevel(String level, int studentYear)
+  - List<InternshipOpportunity> filterByStatus(List<InternshipOpportunity> opportunities)
+  - List<InternshipOpportunity> filterByMajor(List<InternshipOpportunity> opportunities)
+  - List<InternshipOpportunity> filterByLevel(List<InternshipOpportunity> opportunities)
+  - List<InternshipOpportunity> filterByClosingDate(List<InternshipOpportunity> opportunities)
+  - List<InternshipOpportunity> sortByTitle(List<InternshipOpportunity> opportunities)
+}
+
+' Control Classes
+class InternshipSystem {
+  - AuthenticationManager authManager
+  - InternshipManager internshipManager
+  - ApplicationManager applicationManager
+  - IOManager ioManager
+  + InternshipSystem()
+  + void initializeSystem()
+  + void run()
+}
+
+class AuthenticationManager {
+  - Map<String, User> users
+  - User currentUser
+  + void loadUsersFromFile(String fileName, String userType)
+  + void addUser(User user)
+  + User getUserById(String userId)
+  + boolean authenticateUser(String userId, String password)
+  + void setCurrentUser(String userId)
+  + User getCurrentUser()
+  + void logout()
+  + void registerCompanyRepresentative()
+  + List<User> getPendingCompanyRepresentatives()
+}
+
+class InternshipManager {
+  - Map<String, InternshipOpportunity> opportunities
+  - int nextOpportunityId
+  + void loadInternshipsFromFile(String fileName)
+  + void addInternshipOpportunity(InternshipOpportunity opportunity)
+  + InternshipOpportunity getInternshipOpportunityById(String id)
+  + List<InternshipOpportunity> getVisibleOpportunities(Student student)
+  + List<InternshipOpportunity> getPendingInternshipOpportunities()
+  + List<InternshipOpportunity> getAllInternshipOpportunities()
+  + int getNextOpportunityId()
+}
+
+class ApplicationManager {
+  - Map<String, InternshipApplication> applications
+  + void loadInternshipApplicationsFromFile(String fileName)
+  + void reloadInternshipApplicationsForUser(String userId)
+  + List<InternshipApplication> getWithdrawalRequests()
+  + void addApplication(InternshipApplication application)
+  + void updateApplication(InternshipApplication application)
+  + void removeApplication(InternshipApplication application)
+}
+
+class IOManager {
+  - Scanner scanner
+  + Scanner getScanner()
+  + void displayMenu(String menuType)
+  + void showMessage(String message)
+  + String getInput(String prompt)
+  + int getIntInput(String prompt)
+  + LocalDate getDateInput(String prompt)
+  + void clearScreen()
+}
+
+abstract class User {
+  # String userId
+  # String name
+  # String password
+  # String role
+  + User(String userId, String name, String password)
+  + String getUserId()
+  + String getName()
+  + String getPassword()
+  + void setPassword(String)
+  + String getRole()
+  + {abstract} void displayMenu()
+  + boolean changePassword(String, String)
+  + {abstract} void performAction(int, InternshipSystem)
+}
+
+class Student {
+  - int yearOfStudy
+  - String major
+  - List<InternshipApplication> applications
+  - String acceptedInternshipId
+  + Student(String userId, String name, String password, int yearOfStudy, String major)
+  + int getYearOfStudy()
+  + String getMajor()
+  + List<InternshipApplication> getApplications()
+  + String getAcceptedInternshipId()
+  + void setAcceptedInternshipId(String)
+  + void displayMenu() <<override>>
+  + void performAction(int, InternshipSystem) <<override>>
+}
+
+class CareerCenterStaff {
+  - String department
+  + CareerCenterStaff(String userId, String name, String password, String department)
+  + String getDepartment()
+  + void displayMenu() <<override>>
+  + void performAction(int, InternshipSystem) <<override>>
+}
+
+class CompanyRepresentative {
+  - String companyName
+  - String department
+  - String position
+  - String status
+  - String email
+  + CompanyRepresentative(String userId, String name, String password, String companyName, String department, String position, String email)
+  + String getCompanyName()
+  + String getDepartment()
+  + String getPosition()
+  + String getEmail()
+  + String getStatus()
+  + void setStatus(String)
+  + void displayMenu() <<override>>
+  + void performAction(int, InternshipSystem) <<override>>
+}
+
+class InternshipApplication {
+  - String internshipId
+  - String studentId
+  - String status
+  - String companyApprovalStatus
+  + InternshipApplication(String internshipId, String studentId, String status, String companyApprovalStatus)
+  + InternshipApplication(String internshipId, String studentId, String status)
+  + String getInternshipId()
+  + String getStudentId()
+  + String getStatus()
+  + String getCompanyApprovalStatus()
+  + void setStatus(String)
+  + void setCompanyApprovalStatus(String)
+  + boolean equals(Object) <<override>>
+  + int hashCode() <<override>>
+}
+
+class InternshipOpportunity {
+  - String id
+  - String title
+  - String description
+  - String level
+  - String preferredMajor
+  - LocalDate openingDate
+  - LocalDate closingDate
+  - String status
+  - String companyName
+  - String companyRepId
+  - int slots
+  - int appliedCount
+  - boolean visible
+  - List<InternshipApplication> applications
+  + InternshipOpportunity(String id, String title, String description, String level, String preferredMajor, LocalDate openingDate, LocalDate closingDate, String status, String companyName, String companyRepId, int slots, boolean visible)
+  + InternshipOpportunity(String id, String title, String description, String level, String preferredMajor, LocalDate openingDate, LocalDate closingDate, String status, String companyName, String companyRepId, int slots)
+  + String getId()
+  + String getTitle()
+  + String getDescription()
+  + String getLevel()
+  + String getPreferredMajor()
+  + LocalDate getOpeningDate()
+  + LocalDate getClosingDate()
+  + String getStatus()
+  + String getCompanyName()
+  + String getCompanyRepId()
+  + int getSlots()
+  + boolean isVisible()
+  + List<InternshipApplication> getApplications()
+  + void setStatus(String)
+  + void addApplication(InternshipApplication)
+  + InternshipApplication getApplicationByStudentId(String)
+  + boolean hasReachedApplicationLimit()
+  + void updateStatusAfterAcceptance()
+  + void toggleVisibility()
+  + String toString() <<override>>
+}
+
+' Inheritance relationships
+User <|-- Student
+User <|-- CareerCenterStaff
+User <|-- CompanyRepresentative
+
+' Arrange classes in layers
+together {
+  class InternshipSystem
+  class InternshipFilter
+}
+
+together {
+  class User
+  class InternshipOpportunity
+  class InternshipApplication
+}
+
+' Control class relationships
+InternshipSystem "1" *-right- "1" AuthenticationManager
+InternshipSystem "1" *-right- "1" InternshipManager
+InternshipSystem "1" *-right- "1" ApplicationManager
+InternshipSystem "1" *-right- "1" IOManager
+InternshipSystem "1" o-right- "1" InternshipFilter
+
+AuthenticationManager "1" *-right- "*" User
+InternshipManager "1" *-right- "*" InternshipOpportunity
+ApplicationManager "1" *-right- "*" InternshipApplication
+AuthenticationManager "1" o-right- "1" User
+
+' Entity relationships
+Student "1" -right- "*" InternshipApplication
+InternshipOpportunity "1" -- "*" InternshipApplication
+CompanyRepresentative "1" -right- "*" InternshipOpportunity
+
+' Filter relationships
+InternshipFilter ..[thickness=2]down..> InternshipOpportunity : filters
+
+' Layout hints
+hide empty members
+hide empty methods
+
+@enduml

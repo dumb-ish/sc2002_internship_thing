@@ -1,0 +1,58 @@
+@startuml
+
+skinparam sequence {
+    ArrowColor Black
+    ActorBorderColor Black
+    LifeLineBorderColor Black
+    BoxBorderColor Black
+    ParticipantBorderColor Black
+    ParticipantBackgroundColor White
+    ActorBackgroundColor White
+}
+
+actor User
+participant InternshipSystem
+participant IOManager
+participant AuthenticationManager
+database "User Database"
+
+User -> InternshipSystem: run()
+activate InternshipSystem
+
+InternshipSystem -> IOManager: displayMenu("login")
+activate IOManager
+IOManager --> InternshipSystem: show login options
+deactivate IOManager
+
+User -> InternshipSystem: select login option
+InternshipSystem -> IOManager: getInput("Enter User ID")
+activate IOManager
+IOManager --> InternshipSystem: userId
+deactivate IOManager
+
+InternshipSystem -> IOManager: getInput("Enter Password")
+activate IOManager
+IOManager --> InternshipSystem: password
+deactivate IOManager
+
+InternshipSystem -> AuthenticationManager: authenticateUser(userId, password)
+activate AuthenticationManager
+
+AuthenticationManager -> "User Database": verify credentials
+activate "User Database"
+"User Database" --> AuthenticationManager: validation result
+deactivate "User Database"
+
+alt credentials valid
+    AuthenticationManager -> AuthenticationManager: setCurrentUser(userId)
+    AuthenticationManager --> InternshipSystem: true
+    InternshipSystem -> IOManager: displayMenu(userType)
+else credentials invalid
+    AuthenticationManager --> InternshipSystem: false
+    InternshipSystem -> IOManager: showMessage("Invalid credentials")
+end
+
+deactivate AuthenticationManager
+deactivate InternshipSystem
+
+@enduml
