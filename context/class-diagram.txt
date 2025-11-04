@@ -1,0 +1,245 @@
+@startuml
+title Internship Placement Management System – Final BCE Class Diagram (with Factory + Injection)
+
+' ===========================================================
+' ENTITY CLASSES
+' ===========================================================
+abstract class User {
+    - userID : string
+    - name : string
+    - password : string
+    - filterCriteria : FilterCriteria
+    --
+    + login(id : string, password : string) : bool
+    + logout() : void
+    + changePassword(oldPwd : string, newPwd : string) : bool
+    + getFilterCriteria() : FilterCriteria
+    + setFilterCriteria(fc : FilterCriteria) : void
+}
+
+class Student {
+    - yearOfStudy : int
+    - major : string
+    --
+    + viewInternshipList() : List<InternshipOpportunity>
+    + applyForInternship(internship : InternshipOpportunity) : bool
+    + viewApplications() : List<Application>
+    + acceptInternship(app : Application) : bool
+    + requestWithdrawal(app : Application) : bool
+}
+
+class CompanyRepresentative {
+    - companyName : string
+    - department : string
+    - position : string
+    --
+    + createInternshipOpportunity(details : Map<string, string>) : InternshipOpportunity
+    + viewApplications(opportunity : InternshipOpportunity) : List<Application>
+    + approveApplication(app : Application) : void
+    + rejectApplication(app : Application) : void
+    + toggleVisibility(opportunity : InternshipOpportunity, visible : bool) : void
+}
+
+class CareerCenterStaff {
+    - staffDepartment : string
+    --
+    + approveRepresentative(rep : CompanyRepresentative) : void
+    + rejectRepresentative(rep : CompanyRepresentative) : void
+    + approveInternship(opportunity : InternshipOpportunity) : void
+    + rejectInternship(opportunity : InternshipOpportunity) : void
+    + approveWithdrawal(app : Application) : void
+    + rejectWithdrawal(app : Application) : void
+    + generateReport(filter : FilterCriteria) : List<InternshipOpportunity>
+}
+
+class InternshipOpportunity {
+    - title : string
+    - description : string
+    - level : string
+    - preferredMajor : string
+    - openingDate : Date
+    - closingDate : Date
+    - status : string
+    - visibility : bool
+    - companyName : string
+    - numSlots : int
+    --
+    + isOpenForApplications() : bool
+    + updateStatus(newStatus : string) : void
+}
+
+class Application {
+    - status : string
+    - withdrawalRequested : bool
+    --
+    + updateStatus(newStatus : string) : void
+    + markWithdrawalRequested() : void
+}
+
+class FilterCriteria {
+    - level : string
+    - major : string
+    - status : string
+    - closingDate : Date
+}
+
+User <|-- Student
+User <|-- CompanyRepresentative
+User <|-- CareerCenterStaff
+
+Student "1" --> "0..3" Application : applies for >
+Application "1" --> "1" InternshipOpportunity : targets >
+InternshipOpportunity "1" <-- "0..*" Application : < has
+CompanyRepresentative "1" --> "0..5" InternshipOpportunity : creates >
+CareerCenterStaff "0..1" <-- "0..*" InternshipOpportunity : approves >
+User "1" *-- "1" FilterCriteria : owns >
+
+' ===========================================================
+' CONTROL CLASSES
+' ===========================================================
+class SystemManager {
+    - users : List<User>
+    - internshipManager : InternshipManager
+    - applicationManager : ApplicationManager
+    - reportGenerator : ReportGenerator
+    - currentUser : User
+    --
+    + initializeSystem(userFile : string) : void
+    + authenticateUser(id : string, pwd : string) : User
+    + startUserSession(user : User) : void
+    + registerCompanyRepresentative(details : Map<string,string>) : CompanyRepresentative
+    + run() : void
+}
+
+class InternshipManager {
+    - internshipList : List<InternshipOpportunity>
+    - filterHelper : InternshipFilter
+    --
+    + addInternship(opportunity : InternshipOpportunity) : void
+    + approveInternship(opportunity : InternshipOpportunity) : void
+    + rejectInternship(opportunity : InternshipOpportunity) : void
+    + filterInternships(criteria : FilterCriteria) : List<InternshipOpportunity>
+}
+
+class ApplicationManager {
+    - applicationList : List<Application>
+    --
+    + submitApplication(student : Student, internship : InternshipOpportunity) : bool
+    + updateApplicationStatus(app : Application, status : string) : void
+    + handleWithdrawal(app : Application) : void
+}
+
+class InternshipFilter {
+    + applyFilter(list : List<InternshipOpportunity>, criteria : FilterCriteria) : List<InternshipOpportunity>
+}
+
+class ReportGenerator {
+    + generateReport(opportunities : List<InternshipOpportunity>, criteria : FilterCriteria) : List<InternshipOpportunity>
+}
+
+SystemManager *-- InternshipManager
+SystemManager *-- ApplicationManager
+SystemManager *-- ReportGenerator
+SystemManager *-- User
+
+InternshipManager *-- "0..*" InternshipOpportunity : manages >
+ApplicationManager *-- "0..*" Application : manages >
+InternshipManager *-- InternshipFilter
+
+' ===========================================================
+' FACTORY CLASS
+' ===========================================================
+class CLIBoundaryFactory {
+    + createBoundary(mgr : SystemManager, user : User) : CLIUserBoundary
+}
+
+SystemManager ..> CLIBoundaryFactory : uses >
+CLIBoundaryFactory ..> CLIUserBoundary : creates >
+
+' ===========================================================
+' BOUNDARY CLASSES (CLI)
+' ===========================================================
+interface IUserBoundary {
+    + displayMenu() : void
+    + promptChangePassword() : void
+    + updateFilter() : void
+    + canEditField(fieldName : string) : bool
+    + logout() : void
+}
+
+abstract class CLIUserBoundary implements IUserBoundary {
+    - systemManager : SystemManager
+    - currentUser : User
+    --
+    + displayMenu() : void
+    + promptChangePassword() : void
+    + updateFilter() : void
+    + canEditField(fieldName : string) : bool
+    + logout() : void
+}
+
+class CLIStudentBoundary extends CLIUserBoundary {
+    + displayMenu() : void
+    + viewInternships() : void
+    + applyForInternship() : void
+    + viewApplications() : void
+    + acceptInternship() : void
+    + requestWithdrawal() : void
+    + updateFilter() : void
+    + canEditField(fieldName : string) : bool
+}
+
+class CLICompanyRepBoundary extends CLIUserBoundary {
+    + displayMenu() : void
+    + createInternshipOpportunity() : void
+    + viewApplications() : void
+    + approveApplication() : void
+    + rejectApplication() : void
+    + toggleVisibility() : void
+}
+
+class CLIStaffBoundary extends CLIUserBoundary {
+    + displayMenu() : void
+    + reviewPendingRepresentatives() : void
+    + approveRepresentative() : void
+    + rejectRepresentative() : void
+    + approveInternship() : void
+    + rejectInternship() : void
+    + approveWithdrawal() : void
+    + rejectWithdrawal() : void
+    + generateReport() : void
+}
+
+class CLILoginBoundary {
+    - systemManager : SystemManager
+    --
+    + displayWelcomeMenu() : void
+    + promptLogin() : void
+    + displayLoginError() : void
+    + promptRegistration() : void
+    + registerCompanyRepresentative() : void
+}
+
+' ===========================================================
+' FILTER BOUNDARY CLASS (Shared Component)
+' ===========================================================
+class FilterBoundary {
+    + displayFilterMenu(boundary : IUserBoundary, criteria : FilterCriteria) : void
+    + promptForCriteria(criteria : FilterCriteria) : FilterCriteria
+}
+
+' ===========================================================
+' RELATIONSHIPS
+' ===========================================================
+CLIUserBoundary o-- SystemManager : has >
+CLIUserBoundary o-- User : current >
+CLIUserBoundary ..> FilterBoundary : uses >
+CLIStudentBoundary ..> FilterBoundary : uses >
+CLICompanyRepBoundary ..> FilterBoundary : uses >
+CLIStaffBoundary ..> FilterBoundary : uses >
+CLILoginBoundary ..> SystemManager : uses >
+CLIUserBoundary <|-- CLIStudentBoundary
+CLIUserBoundary <|-- CLICompanyRepBoundary
+CLIUserBoundary <|-- CLIStaffBoundary
+
+@enduml

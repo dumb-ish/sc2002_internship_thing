@@ -1,32 +1,78 @@
-import java.util.*;
+/**
+ * Abstract base class representing a User in the Internship Placement System.
+ * All users (Students, Company Representatives, Career Center Staff) inherit from this class.
+ */
+public abstract class User {
+    private String userID;
+    private String name;
+    private String password;
+    private FilterCriteria filterCriteria;
 
-abstract class User {
-    protected String userId;
-    protected String name;
-    protected String password;
-    protected String role;
-    
-    public User(String userId, String name, String password) {
-        this.userId = userId;
+    /**
+     * Constructor for User
+     */
+    public User(String userID, String name, String password) {
+        this.userID = userID;
         this.name = name;
         this.password = password;
+        this.filterCriteria = new FilterCriteria();
     }
-    
-    public String getUserId() { return userId; }
-    public String getName() { return name; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-    public String getRole() { return role; }
 
-    public abstract void displayMenu();
-    
-    public boolean changePassword(String oldPassword, String newPassword) {
-        if (this.password.equals(oldPassword)) {
-            this.password = newPassword;
+    /**
+     * Authenticate user login with ID and password
+     */
+    public boolean login(String id, String password) {
+        return this.userID.equals(id) && this.password.equals(password);
+    }
+
+    /**
+     * Logout user - placeholder for future session management
+     */
+    public void logout() {
+        // Placeholder for logout logic
+        System.out.println("User " + name + " logged out successfully.");
+    }
+
+    /**
+     * Change user password
+     */
+    public boolean changePassword(String oldPwd, String newPwd) {
+        if (this.password.equals(oldPwd)) {
+            this.password = newPwd;
             return true;
         }
         return false;
     }
-    
-    public abstract void performAction(int choice, InternshipSystem system);
+
+    /**
+     * Get the user's filter criteria
+     */
+    public FilterCriteria getFilterCriteria() {
+        return filterCriteria;
+    }
+
+    /**
+     * Set the user's filter criteria
+     */
+    public void setFilterCriteria(FilterCriteria fc) {
+        this.filterCriteria = fc;
+    }
+
+    // Getters
+    public String getUserID() {
+        return userID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    // Setter for password (for internal use)
+    protected void setPassword(String password) {
+        this.password = password;
+    }
 }

@@ -1,105 +1,147 @@
-import java.util.*;
 import java.time.LocalDate;
 
-class InternshipOpportunity {
-    private String id;
+/**
+ * Represents an internship opportunity in the system.
+ * Contains all details about the internship including dates, requirements, and status.
+ */
+public class InternshipOpportunity {
     private String title;
     private String description;
-    private String level;
+    private String level; // Basic, Intermediate, Advanced
     private String preferredMajor;
     private LocalDate openingDate;
     private LocalDate closingDate;
-    private String status;
+    private String status; // Pending, Approved, Rejected, Filled
+    private boolean visibility;
     private String companyName;
-    private String companyRepId;
-    private int slots;
-    private int appliedCount;
-    private boolean visible;
-    private List<InternshipApplication> applications;
-    
-    public InternshipOpportunity(String id, String title, String description, String level,
-                               String preferredMajor, LocalDate openingDate, LocalDate closingDate,
-                               String status, String companyName, String companyRepId, int slots, boolean initialVisibility) {
-        this.id = id;
+    private String companyRepID; // ID of the representative in charge
+    private int numSlots;
+
+    /**
+     * Constructor for InternshipOpportunity
+     */
+    public InternshipOpportunity(String title, String description, String level,
+                                String preferredMajor, LocalDate openingDate, LocalDate closingDate,
+                                String companyName, String companyRepID, int numSlots) {
         this.title = title;
         this.description = description;
         this.level = level;
         this.preferredMajor = preferredMajor;
         this.openingDate = openingDate;
         this.closingDate = closingDate;
-        this.status = status;
+        this.status = "Pending"; // Default status
+        this.visibility = false; // Default visibility
         this.companyName = companyName;
-        this.companyRepId = companyRepId;
-        this.slots = slots;
-        this.appliedCount = 0;
-        this.visible = initialVisibility;
-        this.applications = new ArrayList<>();
+        this.companyRepID = companyRepID;
+        this.numSlots = numSlots;
     }
     
-    public InternshipOpportunity(String id, String title, String description, String level,
-                               String preferredMajor, LocalDate openingDate, LocalDate closingDate,
-                               String status, String companyName, String companyRepId, int slots) {
-        this(id, title, description, level, preferredMajor, openingDate, closingDate,
-             status, companyName, companyRepId, slots, false);
+    /**
+     * Check if the internship is currently open for applications
+     */
+    public boolean isOpenForApplications() {
+        LocalDate today = LocalDate.now();
+        return visibility && 
+               "Approved".equals(status) && 
+               !today.isBefore(openingDate) && 
+               !today.isAfter(closingDate) &&
+               !"Filled".equals(status);
     }
     
-    public String getId() { return id; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public String getLevel() { return level; }
-    public String getPreferredMajor() { return preferredMajor; }
-    public LocalDate getOpeningDate() { return openingDate; }
-    public LocalDate getClosingDate() { return closingDate; }
-    public String getStatus() { return status; }
-    public String getCompanyName() { return companyName; }
-    public String getCompanyRepId() { return companyRepId; }
-    public int getSlots() { return slots; }
-    public boolean isVisible() { return visible; }
-    public List<InternshipApplication> getApplications() { return applications; }
-    
-    public void setStatus(String status) { 
-        this.status = status; 
-        if (status.equals("Approved")) {
-            this.visible = true;
+    /**
+     * Update the status of the internship
+     */
+    public void updateStatus(String newStatus) {
+        this.status = newStatus;
+        // Automatically set visibility to true when approved
+        if ("Approved".equals(newStatus)) {
+            this.visibility = true;
         }
     }
     
-    public void addApplication(InternshipApplication application) {
-        if (!applications.contains(application)) {
-            applications.add(application);
-            appliedCount++;
-        }
+    // Getters
+    public String getTitle() { 
+        return title; 
     }
     
-    public InternshipApplication getApplicationByStudentId(String studentId) {
-        return applications.stream()
-            .filter(app -> app.getStudentId().equals(studentId))
-            .findFirst()
-            .orElse(null);
+    public String getDescription() { 
+        return description; 
     }
     
-    public boolean hasReachedApplicationLimit() {
-        return appliedCount >= slots;
+    public String getLevel() { 
+        return level; 
     }
     
-    public void updateStatusAfterAcceptance() {
-        long acceptedCount = applications.stream()
-            .filter(app -> app.getStatus().equals("Accepted"))
-            .count();
-            
-        if (acceptedCount >= slots) {
-            this.status = "Filled";
-        }
+    public String getPreferredMajor() { 
+        return preferredMajor; 
     }
     
-    public void toggleVisibility() {
-        this.visible = !this.visible;
+    public LocalDate getOpeningDate() { 
+        return openingDate; 
     }
     
-    @Override
-    public String toString() {
-        return "ID: " + id + ", Title: " + title + ", Company: " + companyName + 
-               ", Level: " + level + ", Status: " + status + ", Slots: " + slots + 
-               ", Applied: " + appliedCount + ", Visible: " + visible;
+    public LocalDate getClosingDate() { 
+        return closingDate; 
+    }
+    
+    public String getStatus() { 
+        return status; 
+    }
+    
+    public boolean getVisibility() { 
+        return visibility; 
+    }
+    
+    public String getCompanyName() { 
+        return companyName; 
+    }
+    
+    public String getCompanyRepID() { 
+        return companyRepID; 
+    }
+    
+    public int getNumSlots() { 
+        return numSlots; 
+    }
+    
+    // Setters
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    
+    public void setLevel(String level) {
+        this.level = level;
+    }
+    
+    public void setPreferredMajor(String preferredMajor) {
+        this.preferredMajor = preferredMajor;
+    }
+    
+    public void setOpeningDate(LocalDate openingDate) {
+        this.openingDate = openingDate;
+    }
+    
+    public void setClosingDate(LocalDate closingDate) {
+        this.closingDate = closingDate;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    public void setVisibility(boolean visibility) {
+        this.visibility = visibility;
+    }
+    
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+    
+    public void setNumSlots(int numSlots) {
+        this.numSlots = numSlots;
     }
 }
