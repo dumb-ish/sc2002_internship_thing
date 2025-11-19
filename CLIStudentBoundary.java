@@ -93,7 +93,6 @@ public class CLIStudentBoundary extends CLIUserBoundary {
                 System.out.println("   Slots: " + opp.getNumSlots());
             }
         }
-        waitForEnter();
     }
     
     /**
@@ -106,7 +105,6 @@ public class CLIStudentBoundary extends CLIUserBoundary {
         System.out.println("\n=== Available Internship Opportunities ===");
         if (opportunities.isEmpty()) {
             System.out.println("No opportunities available matching your criteria.");
-            waitForEnter();
             return;
         }
         
@@ -141,7 +139,6 @@ public class CLIStudentBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     /**
@@ -164,7 +161,6 @@ public class CLIStudentBoundary extends CLIUserBoundary {
                 System.out.println("   Withdrawal Requested: " + app.isWithdrawalRequested());
             }
         }
-        waitForEnter();
     }
     
     /**
@@ -180,7 +176,6 @@ public class CLIStudentBoundary extends CLIUserBoundary {
         
         if (successful.isEmpty()) {
             System.out.println("You have no successful applications to accept.");
-            waitForEnter();
             return;
         }
         
@@ -218,7 +213,6 @@ public class CLIStudentBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     /**
@@ -257,7 +251,6 @@ public class CLIStudentBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     @Override

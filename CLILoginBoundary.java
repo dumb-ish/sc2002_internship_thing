@@ -110,58 +110,134 @@ public class CLILoginBoundary {
         System.out.println("\n=== Company Representative Registration ===");
         System.out.println("(Enter '0' at any prompt to cancel registration)");
         
-        System.out.print("Enter Email (this will be your User ID): ");
-        String email = scanner.nextLine();
-        if ("0".equals(email)) {
-            System.out.println("Registration cancelled.");
-            return;
+        // Email validation with loop
+        String email = null;
+        while (email == null) {
+            System.out.print("Enter Email (this will be your User ID): ");
+            String input = scanner.nextLine().trim();
+            
+            if ("0".equals(input)) {
+                System.out.println("Registration cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Email cannot be empty. Please re-enter.");
+            } else if (!isValidEmail(input)) {
+                System.out.println("Invalid email format. Please enter a valid email address.");
+            } else {
+                email = input;
+            }
         }
         
-        System.out.print("Enter Name: ");
-        String name = scanner.nextLine();
-        if ("0".equals(name)) {
-            System.out.println("Registration cancelled.");
-            return;
+        // Name validation with loop
+        String name = null;
+        while (name == null) {
+            System.out.print("Enter Name: ");
+            String input = scanner.nextLine().trim();
+            
+            if ("0".equals(input)) {
+                System.out.println("Registration cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Name cannot be empty. Please re-enter.");
+            } else {
+                name = input;
+            }
         }
         
-        System.out.print("Enter Password: ");
-        String password = scanner.nextLine();
-        if ("0".equals(password)) {
-            System.out.println("Registration cancelled.");
-            return;
+        // Password validation with loop
+        String password = null;
+        while (password == null) {
+            System.out.print("Enter Password: ");
+            String input = scanner.nextLine();
+            
+            if ("0".equals(input)) {
+                System.out.println("Registration cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Password cannot be empty. Please re-enter.");
+            } else {
+                password = input;
+            }
         }
         
-        System.out.print("Confirm Password: ");
-        String confirmPassword = scanner.nextLine();
-        if ("0".equals(confirmPassword)) {
-            System.out.println("Registration cancelled.");
-            return;
+        // Password confirmation with loop
+        String confirmPassword = null;
+        while (confirmPassword == null) {
+            System.out.print("Confirm Password: ");
+            String input = scanner.nextLine();
+            
+            if ("0".equals(input)) {
+                System.out.println("Registration cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Password confirmation cannot be empty. Please re-enter.");
+            } else if (!password.equals(input)) {
+                System.out.println("Passwords do not match! Please re-enter.");
+            } else {
+                confirmPassword = input;
+            }
         }
         
-        if (!password.equals(confirmPassword)) {
-            System.out.println("Passwords do not match! Registration failed.");
-            return;
+        // Company name validation with loop
+        String companyName = null;
+        while (companyName == null) {
+            System.out.print("Enter Company Name: ");
+            String input = scanner.nextLine().trim();
+            
+            if ("0".equals(input)) {
+                System.out.println("Registration cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Company name cannot be empty. Please re-enter.");
+            } else {
+                companyName = input;
+            }
         }
         
-        System.out.print("Enter Company Name: ");
-        String companyName = scanner.nextLine();
-        if ("0".equals(companyName)) {
-            System.out.println("Registration cancelled.");
-            return;
+        // Department validation with loop
+        String department = null;
+        while (department == null) {
+            System.out.print("Enter Department: ");
+            String input = scanner.nextLine().trim();
+            
+            if ("0".equals(input)) {
+                System.out.println("Registration cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Department cannot be empty. Please re-enter.");
+            } else {
+                department = input;
+            }
         }
         
-        System.out.print("Enter Department: ");
-        String department = scanner.nextLine();
-        if ("0".equals(department)) {
-            System.out.println("Registration cancelled.");
-            return;
-        }
-        
-        System.out.print("Enter Position: ");
-        String position = scanner.nextLine();
-        if ("0".equals(position)) {
-            System.out.println("Registration cancelled.");
-            return;
+        // Position validation with loop
+        String position = null;
+        while (position == null) {
+            System.out.print("Enter Position: ");
+            String input = scanner.nextLine().trim();
+            
+            if ("0".equals(input)) {
+                System.out.println("Registration cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Position cannot be empty. Please re-enter.");
+            } else {
+                position = input;
+            }
         }
         
         CompanyRepresentative rep = systemManager.registerCompanyRepresentative(
@@ -179,5 +255,42 @@ public class CLILoginBoundary {
         System.out.println("Your account is pending approval by Career Center Staff.");
         System.out.println("You will be able to login once approved.");
         System.out.println("User ID: " + email);
+    }
+    
+    /**
+     * Validate email format
+     */
+    private boolean isValidEmail(String email) {
+        // Basic email validation: contains @ and has text before and after it
+        if (email == null || email.isEmpty()) {
+            return false;
+        }
+        
+        int atIndex = email.indexOf('@');
+        int lastAtIndex = email.lastIndexOf('@');
+        
+        // Must have exactly one @ symbol
+        if (atIndex == -1 || atIndex != lastAtIndex) {
+            return false;
+        }
+        
+        // Must have text before @
+        if (atIndex == 0) {
+            return false;
+        }
+        
+        // Must have text after @ including a dot
+        String domain = email.substring(atIndex + 1);
+        if (domain.isEmpty() || !domain.contains(".")) {
+            return false;
+        }
+        
+        // Domain must have text after the dot
+        int dotIndex = domain.lastIndexOf('.');
+        if (dotIndex == domain.length() - 1 || dotIndex == 0) {
+            return false;
+        }
+        
+        return true;
     }
 }

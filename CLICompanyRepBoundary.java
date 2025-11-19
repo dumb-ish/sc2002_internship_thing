@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -116,75 +117,158 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         // Check if limit reached
         if (systemManager.getInternshipManager().hasReachedCreationLimit(representative.getUserID())) {
             System.out.println("You have reached the maximum limit of 5 internship opportunities.");
-            waitForEnter();
             return;
         }
         
         System.out.println("\n=== Create Internship Opportunity ===");
+        System.out.println("(Enter 'q' at any prompt to cancel)");
         
-        System.out.print("Enter Internship Title: ");
-        String title = scanner.nextLine();
+        // Title validation with loop
+        String title = null;
+        while (title == null) {
+            System.out.print("Enter Internship Title: ");
+            String input = scanner.nextLine().trim();
+            
+            if ("q".equalsIgnoreCase(input)) {
+                System.out.println("Internship creation cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Title cannot be empty. Please re-enter.");
+            } else {
+                title = input;
+            }
+        }
         
-        System.out.print("Enter Description: ");
-        String description = scanner.nextLine();
+        // Description validation with loop
+        String description = null;
+        while (description == null) {
+            System.out.print("Enter Description: ");
+            String input = scanner.nextLine().trim();
+            
+            if ("q".equalsIgnoreCase(input)) {
+                System.out.println("Internship creation cancelled.");
+                return;
+            }
+            
+            if (input.isEmpty()) {
+                System.out.println("Description cannot be empty. Please re-enter.");
+            } else {
+                description = input;
+            }
+        }
         
-        System.out.println("Select Level:");
-        System.out.println("1. Basic");
-        System.out.println("2. Intermediate");
-        System.out.println("3. Advanced");
-        System.out.print("Choice: ");
+        // Level selection with validation loop
         String level = "";
-        try {
-            int levelChoice = Integer.parseInt(scanner.nextLine());
-            switch (levelChoice) {
-                case 1: level = "Basic"; break;
-                case 2: level = "Intermediate"; break;
-                case 3: level = "Advanced"; break;
-                default:
-                    System.out.println("Invalid choice! Defaulting to Basic.");
-                    level = "Basic";
+        while (level.isEmpty()) {
+            System.out.println("Select Level:");
+            System.out.println("1. Basic");
+            System.out.println("2. Intermediate");
+            System.out.println("3. Advanced");
+            System.out.print("Choice: ");
+            String input = scanner.nextLine().trim();
+            
+            if ("q".equalsIgnoreCase(input)) {
+                System.out.println("Internship creation cancelled.");
+                return;
             }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input! Defaulting to Basic.");
-            level = "Basic";
+            
+            try {
+                int levelChoice = Integer.parseInt(input);
+                switch (levelChoice) {
+                    case 1: level = "Basic"; break;
+                    case 2: level = "Intermediate"; break;
+                    case 3: level = "Advanced"; break;
+                    default:
+                        System.out.println("Invalid choice! Please enter 1, 2, or 3.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter a number (1, 2, or 3).");
+            }
         }
         
+        // Preferred major with quit option
         System.out.print("Enter Preferred Major: ");
-        String preferredMajor = scanner.nextLine();
+        String preferredMajor = scanner.nextLine().trim();
         
-        System.out.print("Enter Opening Date (YYYY-MM-DD): ");
-        LocalDate openingDate;
-        try {
-            openingDate = LocalDate.parse(scanner.nextLine());
-        } catch (DateTimeParseException e) {
-            System.out.println("Invalid date format! Using today's date.");
-            openingDate = LocalDate.now();
+        if ("q".equalsIgnoreCase(preferredMajor)) {
+            System.out.println("Internship creation cancelled.");
+            return;
         }
         
-        System.out.print("Enter Closing Date (YYYY-MM-DD): ");
-        LocalDate closingDate;
-        try {
-            closingDate = LocalDate.parse(scanner.nextLine());
-        } catch (DateTimeParseException e) {
-            System.out.println("Invalid date format! Using one month from today.");
-            closingDate = LocalDate.now().plusMonths(1);
+        // Opening date validation with loop
+        LocalDate openingDate = null;
+        LocalDate today = LocalDate.now();
+        while (openingDate == null) {
+            System.out.print("Enter Opening Date (YYYY-MM-DD): ");
+            String input = scanner.nextLine().trim();
+            
+            if ("q".equalsIgnoreCase(input)) {
+                System.out.println("Internship creation cancelled.");
+                return;
+            }
+            
+            try {
+                LocalDate inputDate = LocalDate.parse(input);
+                if (inputDate.isBefore(today)) {
+                    System.out.println("Opening date cannot be before today (" + today + "). Please re-enter.");
+                } else {
+                    openingDate = inputDate;
+                }
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format! Please use YYYY-MM-DD format.");
+            }
         }
         
-        System.out.print("Enter Number of Slots (max 10): ");
-        int slots;
-        try {
-            slots = Integer.parseInt(scanner.nextLine());
-            if (slots > 10) {
-                System.out.println("Maximum 10 slots allowed. Setting to 10.");
-                slots = 10;
+        // Closing date validation with loop
+        LocalDate closingDate = null;
+        while (closingDate == null) {
+            System.out.print("Enter Closing Date (YYYY-MM-DD): ");
+            String input = scanner.nextLine().trim();
+            
+            if ("q".equalsIgnoreCase(input)) {
+                System.out.println("Internship creation cancelled.");
+                return;
             }
-            if (slots < 1) {
-                System.out.println("Minimum 1 slot required. Setting to 1.");
-                slots = 1;
+            
+            try {
+                LocalDate inputDate = LocalDate.parse(input);
+                if (inputDate.isBefore(today)) {
+                    System.out.println("Closing date cannot be before today (" + today + "). Please re-enter.");
+                } else if (inputDate.isBefore(openingDate) || inputDate.isEqual(openingDate)) {
+                    System.out.println("Closing date must be after opening date (" + openingDate + "). Please re-enter.");
+                } else {
+                    closingDate = inputDate;
+                }
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format! Please use YYYY-MM-DD format.");
             }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid number! Setting to 1 slot.");
-            slots = 1;
+        }
+        
+        // Slots validation with loop
+        int slots = 0;
+        while (slots == 0) {
+            System.out.print("Enter Number of Slots (1-10): ");
+            String input = scanner.nextLine().trim();
+            
+            if ("q".equalsIgnoreCase(input)) {
+                System.out.println("Internship creation cancelled.");
+                return;
+            }
+            
+            try {
+                int inputSlots = Integer.parseInt(input);
+                if (inputSlots < 1) {
+                    System.out.println("Number of slots must be at least 1. Please re-enter.");
+                } else if (inputSlots > 10) {
+                    System.out.println("Maximum 10 slots allowed. Please re-enter.");
+                } else {
+                    slots = inputSlots;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number! Please enter a number between 1 and 10.");
+            }
         }
         
         InternshipOpportunity opportunity = new InternshipOpportunity(
@@ -195,19 +279,33 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         systemManager.getInternshipManager().addInternship(opportunity);
         System.out.println("\nInternship opportunity created successfully!");
         System.out.println("Status: Pending (awaiting Career Center Staff approval)");
-        waitForEnter();
     }
     
     /**
      * View internships created by this representative
      */
     public void viewMyOpportunities() {
-        List<InternshipOpportunity> opportunities = systemManager.getInternshipManager()
+        List<InternshipOpportunity> allOpportunities = systemManager.getInternshipManager()
             .getInternshipsByRepresentative(representative.getUserID());
+        
+        // Apply filter if criteria is set
+        List<InternshipOpportunity> opportunities;
+        if (representative.getFilterCriteria() != null) {
+            opportunities = systemManager.getInternshipManager()
+                .filterInternships(representative.getFilterCriteria()).stream()
+                .filter(opp -> opp.getCompanyRepID().equals(representative.getUserID()))
+                .collect(java.util.stream.Collectors.toList());
+        } else {
+            opportunities = allOpportunities;
+        }
         
         System.out.println("\n=== My Internship Opportunities ===");
         if (opportunities.isEmpty()) {
-            System.out.println("You have not created any internship opportunities.");
+            if (allOpportunities.isEmpty()) {
+                System.out.println("You have not created any internship opportunities.");
+            } else {
+                System.out.println("No internship opportunities match your current filter.");
+            }
         } else {
             for (int i = 0; i < opportunities.size(); i++) {
                 InternshipOpportunity opp = opportunities.get(i);
@@ -225,7 +323,6 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
                 System.out.println("   Applications: " + appCount);
             }
         }
-        waitForEnter();
     }
     
     /**
@@ -260,7 +357,6 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         if (!hasApplications) {
             System.out.println("No applications received yet.");
         }
-        waitForEnter();
     }
     
     /**
@@ -270,74 +366,83 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         List<InternshipOpportunity> opportunities = systemManager.getInternshipManager()
             .getInternshipsByRepresentative(representative.getUserID());
         
-        System.out.println("\n=== Applications for My Opportunities ===");
-        boolean hasApplications = false;
+        // Build list of opportunities with applications
+        List<InternshipOpportunity> oppsWithApps = new ArrayList<>();
+        System.out.println("\n=== Approve/Reject Applications ===");
         
         for (InternshipOpportunity opp : opportunities) {
             List<Application> applications = systemManager.getApplicationManager()
                 .getApplicationsByInternship(opp);
             
             if (!applications.isEmpty()) {
-                System.out.println("\n" + opp.getTitle() + ":");
-                for (int i = 0; i < applications.size(); i++) {
-                    Application app = applications.get(i);
-                    Student student = app.getStudent();
-                    System.out.println("  " + (i + 1) + ". " + student.getName() + 
-                                     " (ID: " + student.getUserID() + ")");
-                    System.out.println("     Year: " + student.getYearOfStudy() + 
-                                     ", Major: " + student.getMajor());
-                    System.out.println("     Status: " + app.getStatus());
-                }
-                hasApplications = true;
+                oppsWithApps.add(opp);
             }
         }
         
-        if (!hasApplications) {
+        if (oppsWithApps.isEmpty()) {
             System.out.println("No applications received yet.");
-            waitForEnter();
             return;
         }
         
-        System.out.print("\nEnter internship title: ");
-        String title = scanner.nextLine();
+        // Display numbered list of internships with applications
+        System.out.println("\nSelect an internship:");
+        for (int i = 0; i < oppsWithApps.size(); i++) {
+            InternshipOpportunity opp = oppsWithApps.get(i);
+            long appCount = systemManager.getApplicationManager()
+                .getApplicationsByInternship(opp).size();
+            System.out.println((i + 1) + ". " + opp.getTitle() + " (" + appCount + " applications)");
+        }
         
-        InternshipOpportunity selectedOpp = null;
-        for (InternshipOpportunity opp : opportunities) {
-            if (opp.getTitle().equalsIgnoreCase(title)) {
-                selectedOpp = opp;
-                break;
+        System.out.print("\nEnter number (or 0 to cancel): ");
+        int oppChoice;
+        try {
+            oppChoice = Integer.parseInt(scanner.nextLine());
+            if (oppChoice == 0) return;
+            
+            if (oppChoice < 1 || oppChoice > oppsWithApps.size()) {
+                System.out.println("Invalid selection!");
+                return;
             }
-        }
-        
-        if (selectedOpp == null) {
-            System.out.println("Internship not found or you don't have permission.");
-            waitForEnter();
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid number!");
             return;
         }
         
+        InternshipOpportunity selectedOpp = oppsWithApps.get(oppChoice - 1);
         List<Application> applications = systemManager.getApplicationManager()
             .getApplicationsByInternship(selectedOpp);
         
-        if (applications.isEmpty()) {
-            System.out.println("No applications for this internship.");
-            waitForEnter();
+        // Display numbered list of applications
+        System.out.println("\nApplications for: " + selectedOpp.getTitle());
+        for (int i = 0; i < applications.size(); i++) {
+            Application app = applications.get(i);
+            Student student = app.getStudent();
+            System.out.println((i + 1) + ". " + student.getName() + " (ID: " + student.getUserID() + ")");
+            System.out.println("   Year: " + student.getYearOfStudy() + ", Major: " + student.getMajor());
+            System.out.println("   Status: " + app.getStatus());
+        }
+        
+        System.out.print("\nEnter application number (or 0 to cancel): ");
+        int appChoice;
+        try {
+            appChoice = Integer.parseInt(scanner.nextLine());
+            if (appChoice == 0) return;
+            
+            if (appChoice < 1 || appChoice > applications.size()) {
+                System.out.println("Invalid selection!");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid number!");
             return;
         }
         
-        System.out.print("Enter student ID: ");
-        String studentID = scanner.nextLine();
+        Application selectedApp = applications.get(appChoice - 1);
         
-        Application selectedApp = null;
-        for (Application app : applications) {
-            if (app.getStudent().getUserID().equals(studentID)) {
-                selectedApp = app;
-                break;
-            }
-        }
-        
-        if (selectedApp == null) {
-            System.out.println("Application not found.");
-            waitForEnter();
+        // Check if application is already finalized
+        if ("Successful".equals(selectedApp.getStatus()) || "Unsuccessful".equals(selectedApp.getStatus())) {
+            System.out.println("\nThis application has already been finalized as: " + selectedApp.getStatus());
+            System.out.println("Cannot change the status of a finalized application.");
             return;
         }
         
@@ -359,7 +464,6 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     /**
@@ -397,7 +501,6 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     @Override

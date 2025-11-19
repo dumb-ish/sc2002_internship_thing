@@ -71,7 +71,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
         System.out.println("\n=== Pending Company Representatives ===");
         if (pending.isEmpty()) {
             System.out.println("No pending company representatives.");
-            waitForEnter();
             return;
         }
         
@@ -91,7 +90,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
             
             if (choice < 1 || choice > pending.size()) {
                 System.out.println("Invalid selection!");
-                waitForEnter();
                 return;
             }
             
@@ -114,7 +112,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     /**
@@ -127,7 +124,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
         System.out.println("\n=== Pending Internship Opportunities ===");
         if (pending.isEmpty()) {
             System.out.println("No pending internship opportunities.");
-            waitForEnter();
             return;
         }
         
@@ -150,7 +146,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
             
             if (choice < 1 || choice > pending.size()) {
                 System.out.println("Invalid selection!");
-                waitForEnter();
                 return;
             }
             
@@ -173,7 +168,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     /**
@@ -186,7 +180,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
         System.out.println("\n=== Withdrawal Requests ===");
         if (withdrawalRequests.isEmpty()) {
             System.out.println("No withdrawal requests.");
-            waitForEnter();
             return;
         }
         
@@ -209,7 +202,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
             
             if (choice < 1 || choice > withdrawalRequests.size()) {
                 System.out.println("Invalid selection!");
-                waitForEnter();
                 return;
             }
             
@@ -232,7 +224,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     /**
@@ -282,7 +273,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
                     break;
                 default:
                     System.out.println("Invalid choice!");
-                    waitForEnter();
                     return;
             }
             
@@ -295,7 +285,6 @@ public class CLIStaffBoundary extends CLIUserBoundary {
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number!");
         }
-        waitForEnter();
     }
     
     @Override

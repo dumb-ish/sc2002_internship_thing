@@ -54,8 +54,17 @@ public class ApplicationManager {
     
     /**
      * Update the status of an application
+     * Prevents changing status of finalized applications (Successful/Unsuccessful)
      */
     public void updateApplicationStatus(Application app, String status) {
+        String currentStatus = app.getStatus();
+        
+        // Prevent changing finalized statuses
+        if ("Successful".equals(currentStatus) || "Unsuccessful".equals(currentStatus)) {
+            System.out.println("Cannot change status of a finalized application (" + currentStatus + ").");
+            return;
+        }
+        
         app.updateStatus(status);
     }
     

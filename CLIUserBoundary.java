@@ -76,17 +76,9 @@ public abstract class CLIUserBoundary implements IUserBoundary {
     }
     
     /**
-     * Get scanner instance
+     * Get scanner for input
      */
     protected Scanner getScanner() {
         return scanner;
-    }
-    
-    /**
-     * Wait for user to press Enter
-     */
-    protected void waitForEnter() {
-        System.out.println("\nPress Enter to continue...");
-        scanner.nextLine();
     }
 }
