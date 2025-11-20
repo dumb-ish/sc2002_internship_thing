@@ -1,0 +1,6 @@
+UserID,Name,CompanyName,Department,Position,Email,Status
+hr@techcorp.com,David Wong,Tech Corp,Human Resources,HR Manager,hr@techcorp.com,Approved
+recruiter@innovate.com,Emily Lim,Innovate Pte Ltd,Talent Acquisition,Senior Recruiter,recruiter@innovate.com,Approved
+pending@startup.com,Frank Tan,StartUp Inc,Human Resources,Talent Lead,pending@startup.com,Pending
+rejected@badcompany.com,George Lee,Bad Company,HR,Manager,rejected@badcompany.com,Rejected
+talent@globaltech.com,Helen Ng,Global Tech Solutions,Recruitment,Talent Partner,talent@globaltech.com,Approved
