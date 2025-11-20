@@ -1,13 +1,53 @@
 import java.util.List;
 
 /**
- * Generates comprehensive reports for Career Center Staff.
- * Provides formatted output of internship opportunities based on filter criteria.
+ * Generates comprehensive reports for Career Center Staff in the Internship Placement Management System.
+ * <p>
+ * The ReportGenerator provides formatted reporting capabilities for system data:
+ * <ul>
+ *   <li>Detailed internship opportunity reports with all attributes</li>
+ *   <li>Summary statistics by status (Pending, Approved, Rejected, Filled)</li>
+ *   <li>Statistical breakdowns by level (Basic, Intermediate, Advanced)</li>
+ *   <li>Formatted console output for easy readability</li>
+ * </ul>
+ * <p>
+ * <strong>Design Philosophy:</strong>
+ * <ul>
+ *   <li><strong>Separation of Concerns:</strong> Focuses solely on report generation and formatting,
+ *       relying on InternshipManager for filtering logic</li>
+ *   <li><strong>Single Responsibility:</strong> Handles only presentation and formatting of data</li>
+ *   <li><strong>Extensibility:</strong> Can be extended to support additional report types (PDF, CSV, etc.)</li>
+ * </ul>
+ * <p>
+ * <strong>Usage Pattern:</strong>
+ * The typical workflow involves:
+ * <ol>
+ *   <li>InternshipManager filters data based on criteria</li>
+ *   <li>ReportGenerator formats and displays the filtered results</li>
+ *   <li>This separation allows the same filtering logic to be used for different output formats</li>
+ * </ol>
+ *
+ * @see InternshipOpportunity
+ * @see InternshipManager
+ * @see FilterCriteria
+ * @author SC2002 Group
+ * @version 1.0
+ * @since 2025-11-20
  */
 public class ReportGenerator {
     
     /**
-     * Generate a report of internship opportunities based on filter criteria
+     * Generates a report from a list of internship opportunities.
+     * <p>
+     * This method currently acts as a pass-through, returning the opportunities as-is.
+     * The filtering is already done by InternshipManager before calling this method.
+     * This design allows for future enhancements such as additional processing,
+     * data transformation, or export to different formats.
+     * </p>
+     *
+     * @param opportunities the list of InternshipOpportunity objects to include in the report
+     * @param criteria      the FilterCriteria that was used to generate this list (for reference)
+     * @return the same list of opportunities (can be extended for additional processing)
      */
     public List<InternshipOpportunity> generateReport(List<InternshipOpportunity> opportunities, 
                                                       FilterCriteria criteria) {
@@ -17,7 +57,21 @@ public class ReportGenerator {
     }
     
     /**
-     * Format and display a report of opportunities
+     * Formats and displays a detailed report of internship opportunities to the console.
+     * <p>
+     * The report includes:
+     * <ul>
+     *   <li>Header with total count of opportunities</li>
+     *   <li>Numbered list of all opportunities with full details</li>
+     *   <li>Formatted separators for readability</li>
+     *   <li>Special message if no opportunities match the criteria</li>
+     * </ul>
+     * <p>
+     * Each opportunity displays:
+     * Title, Company, Level, Preferred Major, Status, Slots, Visibility, Opening Date, Closing Date
+     * </p>
+     *
+     * @param opportunities the list of InternshipOpportunity objects to display
      */
     public void displayReport(List<InternshipOpportunity> opportunities) {
         System.out.println("\n=== Internship Opportunities Report ===");
@@ -37,7 +91,14 @@ public class ReportGenerator {
     }
     
     /**
-     * Format a single opportunity for display
+     * Formats a single internship opportunity as a multi-line string for display.
+     * <p>
+     * This is a helper method used by {@link #displayReport(List)} to format individual
+     * opportunities. The format includes all key attributes with labels for clarity.
+     * </p>
+     *
+     * @param opp the InternshipOpportunity to format
+     * @return a formatted multi-line string representation of the opportunity
      */
     private String formatOpportunity(InternshipOpportunity opp) {
         StringBuilder sb = new StringBuilder();
@@ -54,7 +115,18 @@ public class ReportGenerator {
     }
     
     /**
-     * Generate a summary statistics report
+     * Displays summary statistics for a list of internship opportunities.
+     * <p>
+     * This method provides a high-level overview of the data, showing:
+     * <ul>
+     *   <li><strong>Status Distribution:</strong> Count of opportunities by status
+     *       (Pending, Approved, Rejected, Filled)</li>
+     *   <li><strong>Level Distribution:</strong> Count of opportunities by difficulty level
+     *       (Basic, Intermediate, Advanced)</li>
+     * </ul>
+     * This is useful for Career Center Staff to get a quick snapshot of the system state.
+     *
+     * @param opportunities the list of InternshipOpportunity objects to analyze
      */
     public void displaySummaryStats(List<InternshipOpportunity> opportunities) {
         System.out.println("\n=== Summary Statistics ===");

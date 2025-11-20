@@ -3,21 +3,112 @@ import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
 /**
- * Handles filter menu operations shared across all user types.
- * Allows users to set and modify their filter criteria.
+ * Shared filter UI component for managing user filter criteria across all user types.
+ * <p>
+ * This boundary class provides a reusable filter configuration interface that allows
+ * users to customize which internship opportunities they see. It implements role-based
+ * filtering with different capabilities for different user types.
+ * 
+ * <p><strong>Responsibilities:</strong>
+ * <ul>
+ *   <li>Present interactive filter configuration menus</li>
+ *   <li>Handle filter criteria input and validation</li>
+ *   <li>Enforce role-specific filter restrictions</li>
+ *   <li>Provide consistent filter UX across user types</li>
+ *   <li>Support filter reset functionality</li>
+ * </ul>
+ * 
+ * <p><strong>Filter Criteria Supported:</strong>
+ * <ul>
+ *   <li><strong>Level:</strong> Basic, Intermediate, Advanced</li>
+ *   <li><strong>Major:</strong> Preferred major for internship</li>
+ *   <li><strong>Status:</strong> Pending, Approved, Rejected, Filled</li>
+ *   <li><strong>Closing Date:</strong> Filter by application deadline</li>
+ * </ul>
+ * 
+ * <p><strong>User-Specific Filter Behavior:</strong>
+ * <ul>
+ *   <li><strong>Students:</strong> Restricted filters based on year of study and major
+ *       <ul>
+ *         <li>Year 1-2: Level locked to \"Basic\"</li>
+ *         <li>All years: Major locked to student's major</li>
+ *         <li>All years: Status locked to \"Approved\"</li>
+ *         <li>All years: Can modify closing date filter</li>
+ *       </ul>
+ *   </li>
+ *   <li><strong>Company Representatives:</strong> Full filter control for viewing their internships</li>
+ *   <li><strong>Staff:</strong> Full filter control for generating reports</li>
+ * </ul>
+ * 
+ * <p><strong>Menu Types:</strong>
+ * <ol>
+ *   <li>{@link #displayFilterMenu} - Generic filter menu for company reps and staff</li>
+ *   <li>{@link #displayStudentFilterMenu} - Student-specific menu with locked fields</li>
+ *   <li>{@link #promptForCriteria} - Quick filter setup for reports</li>
+ * </ol>
+ * 
+ * <p><strong>User Experience Features:</strong>
+ * <ul>
+ *   <li>Shows current filter values</li>
+ *   <li>Clear indication of locked fields for students</li>
+ *   <li>Ability to clear individual filters or reset all</li>
+ *   <li>Input validation with error messages</li>
+ *   <li>Consistent menu navigation</li>
+ * </ul>
+ * 
+ * <p><strong>MVC Role:</strong> View layer component - handles filter UI presentation
+ * and input collection. Works with {@link FilterCriteria} model objects.
+ * 
+ * @see FilterCriteria
+ * @see IStudentEligibilityFilter
+ * @see InternshipFilter
+ * @author SC2002 Group
+ * @version 1.0
+ * @since 2025-11-20
  */
 public class FilterBoundary {
+    /** Scanner for reading user input */
     private Scanner scanner;
     
     /**
-     * Constructor
+     * Constructs a new filter boundary.
+     * <p>
+     * Initializes the Scanner for console input handling. The same Scanner instance
+     * is used throughout the filter configuration process.
      */
     public FilterBoundary() {
         this.scanner = new Scanner(System.in);
     }
     
     /**
-     * Display filter menu and allow user to update criteria
+     * Displays an interactive filter menu allowing users to configure filter criteria.
+     * <p>
+     * This is the generic filter menu used by company representatives and staff who have
+     * full control over all filter options. The menu displays current filter values and
+     * allows modification of individual criteria or resetting all filters.
+     * 
+     * <p><strong>Menu Options:</strong>
+     * <ol>
+     *   <li>Level - Choose Basic, Intermediate, or Advanced</li>
+     *   <li>Major - Enter preferred major or clear filter</li>
+     *   <li>Status - Choose Pending, Approved, Rejected, Filled, or clear</li>
+     *   <li>Closing Date - Enter date (YYYY-MM-DD format) or clear</li>
+     *   <li>Reset All Filters - Clear all filter criteria</li>
+     *   <li>Back to Main Menu - Exit filter configuration</li>
+     * </ol>
+     * 
+     * <p><strong>Display Format:</strong> Shows "None" for unset filters, making it
+     * clear which filters are active.
+     * 
+     * <p><strong>Persistence:</strong> Changes are made directly to the provided
+     * {@link FilterCriteria} object, which is typically stored in the User model.
+     * 
+     * <p><strong>Navigation:</strong> Menu loops until user chooses to return to main menu.
+     * 
+     * @param boundary the user boundary that invoked this filter menu (for context)
+     * @param criteria the filter criteria object to modify
+     * 
+     * @see FilterCriteria
      */
     public void displayFilterMenu(IUserBoundary boundary, FilterCriteria criteria) {
         while (true) {
@@ -63,7 +154,49 @@ public class FilterBoundary {
     }
     
     /**
-     * Display student-specific filter menu with conditional editability
+     * Displays student-specific filter menu with conditional field editability.
+     * <p>
+     * This specialized menu enforces business rules for student filtering:
+     * <ul>
+     *   <li>Level filter is locked to "Basic" for Year 1-2 students</li>
+     *   <li>Year 3+ students can choose any level</li>
+     *   <li>Major filter is always locked to the student's major</li>
+     *   <li>Status filter is always locked to "Approved"</li>
+     *   <li>Closing date filter is always editable</li>
+     * </ul>
+     * 
+     * <p><strong>Business Rationale:</strong>
+     * <ul>
+     *   <li>Year 1-2 students should focus on basic internships appropriate to their level</li>
+     *   <li>Students should only see internships matching their academic program</li>
+     *   <li>Only approved internships should be visible to students (quality control)</li>
+     * </ul>
+     * 
+     * <p><strong>User Experience:</strong>
+     * <ul>
+     *   <li>Locked fields clearly labeled with "(Locked)" and explanation</li>
+     *   <li>Attempting to edit locked field displays informative message</li>
+     *   <li>Shows current values even for locked fields</li>
+     *   <li>Provides clear feedback on restrictions</li>
+     * </ul>
+     * 
+     * <p><strong>Menu Options:</strong>
+     * <ol>
+     *   <li>Level - Editable for Year 3+, locked for Year 1-2</li>
+     *   <li>Major - Always locked (displays student's major)</li>
+     *   <li>Status - Always locked (displays "Approved")</li>
+     *   <li>Closing Date - Always editable</li>
+     *   <li>Reset Filters - Clear editable filters (locked filters remain)</li>
+     *   <li>Back to Main Menu - Exit filter configuration</li>
+     * </ol>
+     * 
+     * @param boundary the student boundary that invoked this filter menu
+     * @param criteria the filter criteria object to modify
+     * @param student the student user for checking year of study and major
+     * 
+     * @see Student#getYearOfStudy()
+     * @see Student#getMajor()
+     * @see IStudentEligibilityFilter
      */
     public void displayStudentFilterMenu(IUserBoundary boundary, FilterCriteria criteria, Student student) {
         while (true) {
@@ -129,7 +262,22 @@ public class FilterBoundary {
     }
     
     /**
-     * Set level filter
+     * Prompts user to set or clear the level filter.
+     * <p>
+     * Presents a menu of level options and updates the criteria based on user choice.
+     * 
+     * <p><strong>Options:</strong>
+     * <ol>
+     *   <li>Basic - Entry-level internships</li>
+     *   <li>Intermediate - Mid-level internships</li>
+     *   <li>Advanced - Advanced internships</li>
+     *   <li>Clear Filter - Remove level restriction</li>
+     * </ol>
+     * 
+     * <p><strong>Validation:</strong> Only accepts choices 1-4. Invalid input displays
+     * error message.
+     * 
+     * @param criteria the filter criteria object to update
      */
     private void setLevelFilter(FilterCriteria criteria) {
         System.out.println("\nSelect Level:");
@@ -167,7 +315,18 @@ public class FilterBoundary {
     }
     
     /**
-     * Set major filter
+     * Prompts user to set or clear the major filter.
+     * <p>
+     * Allows free-text entry of preferred major or clearing the filter.
+     * 
+     * <p><strong>Input:</strong>
+     * <ul>
+     *   <li>Enter major name (e.g., "Computer Science", "Engineering")</li>
+     *   <li>Enter "clear" to remove major filter</li>
+     *   <li>Empty input is ignored</li>
+     * </ul>
+     * 
+     * @param criteria the filter criteria object to update
      */
     private void setMajorFilter(FilterCriteria criteria) {
         System.out.print("\nEnter preferred major (or 'clear' to remove filter): ");
@@ -183,7 +342,23 @@ public class FilterBoundary {
     }
     
     /**
-     * Set status filter
+     * Prompts user to set or clear the status filter.
+     * <p>
+     * Presents a menu of status options and updates the criteria based on user choice.
+     * 
+     * <p><strong>Status Options:</strong>
+     * <ol>
+     *   <li>Pending - Awaiting staff approval</li>
+     *   <li>Approved - Approved and visible to students</li>
+     *   <li>Rejected - Rejected by staff</li>
+     *   <li>Filled - All slots taken</li>
+     *   <li>Clear Filter - Remove status restriction</li>
+     * </ol>
+     * 
+     * <p><strong>Validation:</strong> Only accepts choices 1-5. Invalid input displays
+     * error message.
+     * 
+     * @param criteria the filter criteria object to update
      */
     private void setStatusFilter(FilterCriteria criteria) {
         System.out.println("\nSelect Status:");
@@ -226,7 +401,23 @@ public class FilterBoundary {
     }
     
     /**
-     * Set closing date filter
+     * Prompts user to set or clear the closing date filter.
+     * <p>
+     * Allows users to filter internships by their application deadline. Useful for
+     * finding opportunities that are still accepting applications.
+     * 
+     * <p><strong>Input Format:</strong> YYYY-MM-DD (e.g., 2025-12-31)
+     * 
+     * <p><strong>Options:</strong>
+     * <ul>
+     *   <li>Enter date in YYYY-MM-DD format</li>
+     *   <li>Enter "clear" to remove date filter</li>
+     * </ul>
+     * 
+     * <p><strong>Validation:</strong> Parses date and handles DateTimeParseException
+     * for invalid formats.
+     * 
+     * @param criteria the filter criteria object to update
      */
     private void setClosingDateFilter(FilterCriteria criteria) {
         System.out.print("\nEnter closing date (YYYY-MM-DD) or 'clear' to remove filter: ");
@@ -247,7 +438,30 @@ public class FilterBoundary {
     }
     
     /**
-     * Prompt for criteria - alternative method for quick filter setup
+     * Prompts for quick filter criteria setup without a menu loop.
+     * <p>
+     * This alternative method provides a streamlined filter setup process, primarily
+     * used by staff when generating reports. Instead of a menu loop, it sequentially
+     * prompts for each filter criterion, allowing users to skip any by pressing Enter.
+     * 
+     * <p><strong>Use Case:</strong> Quick filter configuration for one-time report
+     * generation, where a menu loop would be unnecessary overhead.
+     * 
+     * <p><strong>Prompt Sequence:</strong>
+     * <ol>
+     *   <li>Level (Basic/Intermediate/Advanced or skip)</li>
+     *   <li>Major (enter major name or skip)</li>
+     *   <li>Status (Pending/Approved/Rejected/Filled or skip)</li>
+     * </ol>
+     * 
+     * <p><strong>User Experience:</strong> Press Enter to skip any criterion. Only
+     * non-empty inputs are applied to the filter.
+     * 
+     * @param existingCriteria existing criteria to modify, or null to create new criteria
+     * @return the updated or new FilterCriteria object with user-specified filters
+     * 
+     * @see ReportGenerator
+     * @see CLIStaffBoundary#generateReport()
      */
     public FilterCriteria promptForCriteria(FilterCriteria existingCriteria) {
         FilterCriteria criteria = existingCriteria != null ? existingCriteria : new FilterCriteria();

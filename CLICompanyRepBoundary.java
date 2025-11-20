@@ -4,14 +4,65 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CLI Boundary for Company Representative users.
- * Handles all company representative-specific menu operations.
+ * Command-line interface boundary for Company Representative users in the View layer (MVC).
+ * <p>
+ * This class provides the company representative-specific user interface, managing all
+ * interactions for company representatives including creating internship opportunities,
+ * managing applications, and controlling internship visibility. It extends {@link CLIUserBoundary}
+ * to inherit common functionality while implementing company-specific operations.
+ * 
+ * <p><strong>Company Representative Operations:</strong>
+ * <ul>
+ *   <li>Create new internship opportunities (up to 5 per representative)</li>
+ *   <li>View and manage their posted internships</li>
+ *   <li>Review applications from students</li>
+ *   <li>Approve or reject student applications</li>
+ *   <li>Toggle visibility of approved internships</li>
+ *   <li>Configure filter settings for viewing internships</li>
+ * </ul>
+ * 
+ * <p><strong>Account Status Handling:</strong>
+ * <ul>
+ *   <li><em>Pending</em> - Restricted menu: can only change password and logout</li>
+ *   <li><em>Approved</em> - Full menu access with all operations</li>
+ *   <li><em>Rejected</em> - Cannot login (handled in login boundary)</li>
+ * </ul>
+ * 
+ * <p><strong>Business Rules Enforced:</strong>
+ * <ul>
+ *   <li>Maximum 5 internship opportunities per representative</li>
+ *   <li>All new internships require Career Center Staff approval</li>
+ *   <li>Cannot approve applications beyond available slots</li>
+ *   <li>Can only toggle visibility of approved internships</li>
+ *   <li>Cannot modify finalized applications (Successful/Unsuccessful/Accepted)</li>
+ * </ul>
+ * 
+ * <p><strong>Input Validation:</strong> All user inputs are validated with error messages
+ * and re-prompting for correct input. Users can cancel operations at any prompt by entering 'q' or '0'.
+ * 
+ * <p><strong>MVC Role:</strong> View layer - handles presentation and input validation,
+ * delegates business logic to {@link InternshipManager} and {@link ApplicationManager}.
+ * 
+ * @see CLIUserBoundary
+ * @see CompanyRepresentative
+ * @see InternshipManager
+ * @see ApplicationManager
+ * @author SC2002 Group
+ * @version 1.0
+ * @since 2025-11-20
  */
 public class CLICompanyRepBoundary extends CLIUserBoundary {
+    /** Reference to the company representative user for type-specific operations */
     private CompanyRepresentative representative;
     
     /**
-     * Constructor
+     * Constructs a company representative boundary for the specified user.
+     * <p>
+     * Initializes the boundary with system manager context and casts the user to
+     * CompanyRepresentative type for accessing representative-specific attributes.
+     * 
+     * @param systemManager the system manager for accessing internship and application managers
+     * @param currentUser the currently logged-in user (must be a CompanyRepresentative)
      */
     public CLICompanyRepBoundary(SystemManager systemManager, User currentUser) {
         super(systemManager, currentUser);
@@ -19,7 +70,30 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
     }
     
     /**
-     * Display company representative menu
+     * Displays the company representative menu based on account approval status.
+     * <p>
+     * This method implements conditional menu display:
+     * <ul>
+     *   <li>If status is "Approved": Shows full menu with all operations</li>
+     *   <li>If status is not "Approved" (Pending): Shows restricted menu (password change and logout only)</li>
+     * </ul>
+     * 
+     * <p><strong>Full Menu Options (Approved accounts):</strong>
+     * <ol>
+     *   <li>Create Internship Opportunity - Post new internship (max 5)</li>
+     *   <li>View My Internship Opportunities - See all posted internships</li>
+     *   <li>View Applications - Review student applications</li>
+     *   <li>Approve/Reject Application - Make hiring decisions</li>
+     *   <li>Toggle Internship Visibility - Show/hide approved internships</li>
+     *   <li>Update Filter Settings - Customize internship view</li>
+     *   <li>Change Password - Update account security</li>
+     *   <li>Logout - End session</li>
+     * </ol>
+     * 
+     * <p><strong>User Experience:</strong> Displays company name in welcome message and
+     * provides clear menu structure with numeric choices.
+     * 
+     * @see #displayPendingMenu()
      */
     @Override
     public void displayMenu() {
@@ -80,7 +154,21 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
     }
     
     /**
-     * Display menu when account is pending approval
+     * Displays restricted menu for company representatives with pending approval status.
+     * <p>
+     * When a company representative's account is awaiting approval from Career Center Staff,
+     * they have limited access to the system. This menu only allows:
+     * <ul>
+     *   <li>Change Password - Update account credentials</li>
+     *   <li>Logout - Exit the system</li>
+     * </ul>
+     * 
+     * <p><strong>User Feedback:</strong> Displays clear message indicating the account is
+     * pending approval and shows current status. This helps users understand why they have
+     * limited access.
+     * 
+     * <p><strong>Business Rule:</strong> Representatives must be approved by staff before
+     * they can create internship opportunities or perform other operations.
      */
     private void displayPendingMenu() {
         while (true) {
@@ -111,7 +199,43 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
     }
     
     /**
-     * Create a new internship opportunity
+     * Guides company representative through creating a new internship opportunity.
+     * <p>
+     * This comprehensive method implements a multi-step creation process with extensive
+     * validation and error handling:
+     * 
+     * <p><strong>Input Fields with Validation:</strong>
+     * <ol>
+     *   <li><strong>Title:</strong> Required, cannot be empty</li>
+     *   <li><strong>Description:</strong> Required, cannot be empty</li>
+     *   <li><strong>Level:</strong> Must be Basic, Intermediate, or Advanced</li>
+     *   <li><strong>Preferred Major:</strong> Optional field</li>
+     *   <li><strong>Opening Date:</strong> Must be today or future date (YYYY-MM-DD format)</li>
+     *   <li><strong>Closing Date:</strong> Must be after opening date and not in the past</li>
+     *   <li><strong>Number of Slots:</strong> Integer between 1-10</li>
+     * </ol>
+     * 
+     * <p><strong>Business Rules:</strong>
+     * <ul>
+     *   <li>Representatives can create maximum 5 internship opportunities</li>
+     *   <li>All new internships start with "Pending" status awaiting staff approval</li>
+     *   <li>Company name and representative ID are automatically assigned</li>
+     * </ul>
+     * 
+     * <p><strong>Validation Loop Pattern:</strong> Each field uses a validation loop that:
+     * <ul>
+     *   <li>Prompts for input</li>
+     *   <li>Allows cancellation with 'q' input</li>
+     *   <li>Validates input against business rules</li>
+     *   <li>Re-prompts with error message if validation fails</li>
+     *   <li>Continues until valid input received</li>
+     * </ul>
+     * 
+     * <p><strong>User Experience:</strong> Clear instructions, error messages, and ability
+     * to cancel at any step. Upon successful creation, displays confirmation with pending
+     * approval notice.
+     * 
+     * @see InternshipManager#addInternship(InternshipOpportunity)
      */
     public void createInternshipOpportunity() {
         // Check if limit reached
@@ -282,7 +406,33 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
     }
     
     /**
-     * View internships created by this representative
+     * Displays all internship opportunities created by this company representative.
+     * <p>
+     * Shows comprehensive information about each posted internship including:
+     * <ul>
+     *   <li>Title, level, and preferred major</li>
+     *   <li>Status (Pending, Approved, Rejected, Filled)</li>
+     *   <li>Visibility setting (Visible/Hidden to students)</li>
+     *   <li>Maximum slots and opening/closing dates</li>
+     *   <li>Application statistics (total applications and filled slots)</li>
+     * </ul>
+     * 
+     * <p><strong>Filter Support:</strong> If the representative has configured filter
+     * criteria, only internships matching those criteria are displayed. Otherwise,
+     * all internships created by this representative are shown.
+     * 
+     * <p><strong>Slot Tracking:</strong> For each internship, displays:
+     * <ul>
+     *   <li>Total number of applications received</li>
+     *   <li>Number of slots filled (Successful + Accepted applications)</li>
+     *   <li>Slots available (calculated from max slots)</li>
+     * </ul>
+     * 
+     * <p><strong>User Feedback:</strong> If no internships exist or match filters,
+     * displays appropriate informative message.
+     * 
+     * @see InternshipManager#getInternshipsByRepresentative(String)
+     * @see ApplicationManager#getApplicationsByInternship(InternshipOpportunity)
      */
     public void viewMyOpportunities() {
         List<InternshipOpportunity> allOpportunities = systemManager.getInternshipManager()
@@ -332,7 +482,30 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
     }
     
     /**
-     * View applications for representative's opportunities
+     * Displays all student applications for this representative's internship opportunities.
+     * <p>
+     * Groups applications by internship opportunity and shows detailed student information:
+     * <ul>
+     *   <li>Student name and user ID</li>
+     *   <li>Year of study and major</li>
+     *   <li>Application status</li>
+     * </ul>
+     * 
+     * <p><strong>Organization:</strong> Applications are grouped under their respective
+     * internship titles for easy review and management.
+     * 
+     * <p><strong>Display Logic:</strong>
+     * <ul>
+     *   <li>Only shows internships that have received applications</li>
+     *   <li>Displays numbered list for easy reference</li>
+     *   <li>Shows clear message if no applications received</li>
+     * </ul>
+     * 
+     * <p><strong>Use Case:</strong> Allows representatives to quickly review all pending
+     * and processed applications across their internship postings before making decisions
+     * in the approve/reject flow.
+     * 
+     * @see ApplicationManager#getApplicationsByInternship(InternshipOpportunity)
      */
     public void viewApplications() {
         List<InternshipOpportunity> opportunities = systemManager.getInternshipManager()
@@ -366,7 +539,42 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
     }
     
     /**
-     * Approve or reject an application
+     * Guides representative through approving or rejecting student applications.
+     * <p>
+     * This method implements a multi-step selection process:
+     * <ol>
+     *   <li>Display internships with pending applications</li>
+     *   <li>Representative selects an internship</li>
+     *   <li>Display pending applications for selected internship</li>
+     *   <li>Representative selects an application</li>
+     *   <li>Representative chooses to approve (Successful) or reject (Unsuccessful)</li>
+     *   <li>System updates application status accordingly</li>
+     * </ol>
+     * 
+     * <p><strong>Application Filtering:</strong> Only shows applications with non-finalized
+     * status. Finalized applications (Successful, Unsuccessful, Accepted) cannot be modified
+     * to maintain data integrity.
+     * 
+     * <p><strong>Slot Management:</strong> When approving applications:
+     * <ul>
+     *   <li>Verifies available slots before approval</li>
+     *   <li>Prevents approval if all slots are filled</li>
+     *   <li>Displays current slot usage (e.g., "3 / 5 filled")</li>
+     *   <li>Counts both Successful and Accepted applications as filled slots</li>
+     * </ul>
+     * 
+     * <p><strong>Validation:</strong>
+     * <ul>
+     *   <li>Ensures selection is within valid range</li>
+     *   <li>Allows cancellation with 0 input at any step</li>
+     *   <li>Prevents modification of finalized applications</li>
+     *   <li>Handles invalid numeric input gracefully</li>
+     * </ul>
+     * 
+     * <p><strong>User Feedback:</strong> Displays clear confirmation messages and slot
+     * usage information after each decision.
+     * 
+     * @see ApplicationManager#updateApplicationStatus(Application, String)
      */
     public void approveRejectApplication() {
         List<InternshipOpportunity> opportunities = systemManager.getInternshipManager()
@@ -509,7 +717,32 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
     }
     
     /**
-     * Toggle visibility of an internship
+     * Toggles the visibility status of an internship opportunity.
+     * <p>
+     * This method allows representatives to control whether approved internships are
+     * visible to students. The workflow:
+     * <ol>
+     *   <li>Displays all internships created by representative</li>
+     *   <li>Prompts for selection by number</li>
+     *   <li>Validates that internship is approved (only approved can toggle)</li>
+     *   <li>Toggles visibility status (Visible ↔ Hidden)</li>
+     *   <li>Displays new visibility status</li>
+     * </ol>
+     * 
+     * <p><strong>Business Rules:</strong>
+     * <ul>
+     *   <li>Only approved internships can have visibility toggled</li>
+     *   <li>Pending or rejected internships remain hidden regardless of setting</li>
+     *   <li>Visibility affects whether students can see and apply to the internship</li>
+     * </ul>
+     * 
+     * <p><strong>Validation:</strong> Ensures selection is valid and within range,
+     * allows cancellation with 0 input.
+     * 
+     * <p><strong>Use Case:</strong> Representatives can temporarily hide internships
+     * (e.g., while reviewing applications) without deleting them.
+     * 
+     * @see InternshipManager#toggleVisibility(InternshipOpportunity)
      */
     public void toggleVisibility() {
         viewMyOpportunities();
@@ -545,6 +778,19 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         }
     }
     
+    /**
+     * Checks if a field can be edited by company representatives.
+     * <p>
+     * Company representatives have permission to edit their own internship postings,
+     * including modifying details and managing visibility settings.
+     * 
+     * <p><strong>Authorization:</strong> This method enforces that representatives can
+     * only modify their own internship opportunities, not system data or other users'
+     * content.
+     * 
+     * @param fieldName the name of the field to check for edit permissions
+     * @return true if fieldName is "internship" (case-insensitive), false otherwise
+     */
     @Override
     public boolean canEditField(String fieldName) {
         // Company reps can edit their internships
