@@ -181,14 +181,15 @@ public class InternshipTest {
     public void testUpdateInternshipDetails() {
         // Arrange
         InternshipOpportunity internship = new InternshipOpportunity(
-            "INT001",
             "Software Intern",
             "Original description",
-            "Java",
-            "Singapore",
-            2000.0,
-            3,
-            "Tech Corp"
+            "Intermediate",
+            "Computer Science",
+            null,
+            null,
+            "Tech Corp",
+            "hr@techcorp.com",
+            3
         );
         
         // Act

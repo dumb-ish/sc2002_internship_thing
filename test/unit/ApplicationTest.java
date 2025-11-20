@@ -35,18 +35,20 @@ public class ApplicationTest {
         applicationManager = systemManager.getApplicationManager();
         
         // Create test student
-        testStudent = new Student("S001", "Test Student", "password", 3.8, "Computer Science");
+        testStudent = new Student("S001", "Test Student", "password", 3, "Computer Science");
         
-        // Create test internship
+        // Create test internship - needs correct constructor parameters
+        // Note: InternshipOpportunity constructor may differ - adjust as needed
         testInternship = new InternshipOpportunity(
-            "INT001",
             "Software Engineering Intern",
             "Backend development",
-            "Java, Spring Boot",
-            "Singapore",
-            2000.0,
-            3,
-            "Tech Corp"
+            "Intermediate",
+            "Computer Science",
+            null, // openingDate
+            null, // closingDate
+            "Tech Corp",
+            "hr@techcorp.com",
+            3
         );
         testInternship.updateStatus("Approved");
     }
@@ -99,14 +101,15 @@ public class ApplicationTest {
         
         // Create another internship
         InternshipOpportunity anotherInternship = new InternshipOpportunity(
-            "INT002",
             "Data Analyst Intern",
             "Data analysis",
-            "Python, SQL",
-            "Singapore",
-            1800.0,
-            2,
-            "Tech Corp"
+            "Basic",
+            "Data Science",
+            null,
+            null,
+            "Tech Corp",
+            "hr@techcorp.com",
+            2
         );
         anotherInternship.updateStatus("Approved");
         
@@ -130,19 +133,20 @@ public class ApplicationTest {
     public void testApplicationToFilledInternship() {
         // Arrange
         InternshipOpportunity smallInternship = new InternshipOpportunity(
-            "INT003",
             "Small Internship",
             "Description",
-            "Requirements",
-            "Singapore",
-            2000.0,
-            1, // Only 1 slot
-            "Company"
+            "Basic",
+            "Computer Science",
+            null,
+            null,
+            "Company",
+            "rep@company.com",
+            1 // Only 1 slot
         );
         smallInternship.updateStatus("Approved");
         
         // Fill the internship
-        Student otherStudent = new Student("S002", "Other Student", "password", 3.5, "CS");
+        Student otherStudent = new Student("S002", "Other Student", "password", 3, "CS");
         Application fillingApp = applicationManager.submitApplication(otherStudent, smallInternship);
         fillingApp.updateStatus("Successful");
         fillingApp.updateStatus("Accepted"); // This should fill the slot
