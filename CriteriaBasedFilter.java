@@ -3,14 +3,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Provides filtering capabilities for internship opportunities.
- * Implements the filtering logic based on various criteria.
+ * Criteria-based filter implementation for general internship filtering.
+ * Used by Company Representatives and Staff for simple criteria-based filtering.
+ * Implements ICriteriaFilter and IInternshipSorter interfaces.
  */
-public class InternshipFilter {
+public class CriteriaBasedFilter implements ICriteriaFilter, IInternshipSorter {
     
     /**
      * Apply filter criteria to a list of internship opportunities
      */
+    @Override
     public List<InternshipOpportunity> applyFilter(List<InternshipOpportunity> list, FilterCriteria criteria) {
         if (criteria == null || !criteria.hasFilters()) {
             return list;
@@ -66,39 +68,9 @@ public class InternshipFilter {
     }
     
     /**
-     * Filter opportunities for a specific student based on their eligibility
-     */
-    public List<InternshipOpportunity> filterForStudent(List<InternshipOpportunity> list, Student student) {
-        return list.stream()
-            .filter(opp -> isEligibleForStudent(opp, student))
-            .collect(Collectors.toList());
-    }
-    
-    /**
-     * Check if a student is eligible for an opportunity
-     */
-    private boolean isEligibleForStudent(InternshipOpportunity opp, Student student) {
-        // Must be visible and open for applications
-        if (!opp.getVisibility() || !opp.isOpenForApplications()) {
-            return false;
-        }
-        
-        // Must match student's major (preferred major must be student's major)
-        if (!opp.getPreferredMajor().equalsIgnoreCase(student.getMajor())) {
-            return false;
-        }
-        
-        // Year 1-2 students can only apply for Basic level
-        if (student.getYearOfStudy() <= 2 && !"Basic".equals(opp.getLevel())) {
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
      * Sort opportunities alphabetically by title
      */
+    @Override
     public List<InternshipOpportunity> sortAlphabetically(List<InternshipOpportunity> list) {
         return list.stream()
             .sorted((o1, o2) -> o1.getTitle().compareToIgnoreCase(o2.getTitle()))

@@ -311,16 +311,22 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
                 InternshipOpportunity opp = opportunities.get(i);
                 System.out.println("\n" + (i + 1) + ". " + opp.getTitle());
                 System.out.println("   Level: " + opp.getLevel());
+                System.out.println("   Preferred Major: " + opp.getPreferredMajor());
                 System.out.println("   Status: " + opp.getStatus());
                 System.out.println("   Visible: " + opp.getVisibility());
-                System.out.println("   Slots: " + opp.getNumSlots());
+                System.out.println("   Max Slots: " + opp.getNumSlots());
                 System.out.println("   Opening: " + opp.getOpeningDate());
                 System.out.println("   Closing: " + opp.getClosingDate());
                 
-                // Show application count
-                long appCount = systemManager.getApplicationManager()
-                    .getApplicationsByInternship(opp).size();
+                // Show application count and slots taken
+                List<Application> applications = systemManager.getApplicationManager()
+                    .getApplicationsByInternship(opp);
+                long appCount = applications.size();
+                long slotsTaken = applications.stream()
+                    .filter(app -> "Successful".equals(app.getStatus()) || "Accepted".equals(app.getStatus()))
+                    .count();
                 System.out.println("   Applications: " + appCount);
+                System.out.println("   Slots: " + slotsTaken + " / " + opp.getNumSlots() + " filled");
             }
         }
     }
@@ -374,13 +380,20 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
             List<Application> applications = systemManager.getApplicationManager()
                 .getApplicationsByInternship(opp);
             
-            if (!applications.isEmpty()) {
+            // Filter out finalized applications (Successful, Unsuccessful, Accepted)
+            List<Application> pendingApplications = applications.stream()
+                .filter(app -> !"Successful".equals(app.getStatus()) 
+                            && !"Unsuccessful".equals(app.getStatus())
+                            && !"Accepted".equals(app.getStatus()))
+                .collect(java.util.stream.Collectors.toList());
+            
+            if (!pendingApplications.isEmpty()) {
                 oppsWithApps.add(opp);
             }
         }
         
         if (oppsWithApps.isEmpty()) {
-            System.out.println("No applications received yet.");
+            System.out.println("No applications to approve/reject.");
             return;
         }
         
@@ -388,9 +401,14 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         System.out.println("\nSelect an internship:");
         for (int i = 0; i < oppsWithApps.size(); i++) {
             InternshipOpportunity opp = oppsWithApps.get(i);
-            long appCount = systemManager.getApplicationManager()
-                .getApplicationsByInternship(opp).size();
-            System.out.println((i + 1) + ". " + opp.getTitle() + " (" + appCount + " applications)");
+            // Count only pending applications that can be approved/rejected
+            long pendingCount = systemManager.getApplicationManager()
+                .getApplicationsByInternship(opp).stream()
+                .filter(app -> !"Successful".equals(app.getStatus()) 
+                            && !"Unsuccessful".equals(app.getStatus())
+                            && !"Accepted".equals(app.getStatus()))
+                .count();
+            System.out.println((i + 1) + ". " + opp.getTitle() + " (" + pendingCount + " pending application" + (pendingCount != 1 ? "s" : "") + ")");
         }
         
         System.out.print("\nEnter number (or 0 to cancel): ");
@@ -409,8 +427,20 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         }
         
         InternshipOpportunity selectedOpp = oppsWithApps.get(oppChoice - 1);
-        List<Application> applications = systemManager.getApplicationManager()
+        List<Application> allApplications = systemManager.getApplicationManager()
             .getApplicationsByInternship(selectedOpp);
+        
+        // Filter out finalized applications
+        List<Application> applications = allApplications.stream()
+            .filter(app -> !"Successful".equals(app.getStatus()) 
+                        && !"Unsuccessful".equals(app.getStatus())
+                        && !"Accepted".equals(app.getStatus()))
+            .collect(java.util.stream.Collectors.toList());
+        
+        if (applications.isEmpty()) {
+            System.out.println("No pending applications for this internship.");
+            return;
+        }
         
         // Display numbered list of applications
         System.out.println("\nApplications for: " + selectedOpp.getTitle());
@@ -440,7 +470,7 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         Application selectedApp = applications.get(appChoice - 1);
         
         // Check if application is already finalized
-        if ("Successful".equals(selectedApp.getStatus()) || "Unsuccessful".equals(selectedApp.getStatus())) {
+        if ("Successful".equals(selectedApp.getStatus()) || "Unsuccessful".equals(selectedApp.getStatus()) || "Accepted".equals(selectedApp.getStatus())) {
             System.out.println("\nThis application has already been finalized as: " + selectedApp.getStatus());
             System.out.println("Cannot change the status of a finalized application.");
             return;
@@ -453,8 +483,20 @@ public class CLICompanyRepBoundary extends CLIUserBoundary {
         try {
             int choice = Integer.parseInt(scanner.nextLine());
             if (choice == 1) {
+                // Check if there are available slots before approving
+                long successfulCount = allApplications.stream()
+                    .filter(app -> "Successful".equals(app.getStatus()) || "Accepted".equals(app.getStatus()))
+                    .count();
+                
+                if (successfulCount >= selectedOpp.getNumSlots()) {
+                    System.out.println("Cannot approve: All slots (" + selectedOpp.getNumSlots() + ") for this internship are already filled.");
+                    System.out.println("Current approved/accepted applications: " + successfulCount);
+                    return;
+                }
+                
                 systemManager.getApplicationManager().updateApplicationStatus(selectedApp, "Successful");
                 System.out.println("Application approved successfully!");
+                System.out.println("Slots used: " + (successfulCount + 1) + " / " + selectedOpp.getNumSlots());
             } else if (choice == 2) {
                 systemManager.getApplicationManager().updateApplicationStatus(selectedApp, "Unsuccessful");
                 System.out.println("Application rejected.");

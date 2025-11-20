@@ -5,6 +5,7 @@ import java.util.List;
 /**
  * Central controller for the Internship Placement System.
  * Manages users, coordinates between managers, and handles system initialization.
+ * Demonstrates Dependency Inversion Principle by injecting filter implementations.
  */
 public class SystemManager {
     private List<User> users;
@@ -14,11 +15,19 @@ public class SystemManager {
     private User currentUser;
     
     /**
-     * Constructor
+     * Constructor with Dependency Injection for filters
      */
     public SystemManager() {
         this.users = new ArrayList<>();
-        this.internshipManager = new InternshipManager();
+        
+        // Create filter implementations
+        // StudentEligibilityFilter implements all three interfaces
+        StudentEligibilityFilter filter = new StudentEligibilityFilter();
+        
+        // Inject three separate interfaces (Option 1: Maximum flexibility)
+        // Same object can be used for multiple interfaces
+        this.internshipManager = new InternshipManager(filter, filter, filter);
+        
         this.applicationManager = new ApplicationManager();
         this.reportGenerator = new ReportGenerator();
         this.currentUser = null;

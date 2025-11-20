@@ -213,7 +213,7 @@ public class CLIStaffBoundary extends CLIUserBoundary {
             
             int decision = Integer.parseInt(scanner.nextLine());
             if (decision == 1) {
-                systemManager.getApplicationManager().approveWithdrawal(selected);
+                systemManager.getApplicationManager().approveWithdrawal(selected, systemManager.getInternshipManager());
                 System.out.println("Withdrawal approved. Application removed from system.");
             } else if (decision == 2) {
                 systemManager.getApplicationManager().rejectWithdrawal(selected);
@@ -247,8 +247,22 @@ public class CLIStaffBoundary extends CLIUserBoundary {
                     // No filter - show all
                     break;
                 case 2:
-                    System.out.print("Enter status (Pending/Approved/Rejected/Filled): ");
-                    criteria.setStatus(scanner.nextLine());
+                    System.out.println("Select status:");
+                    System.out.println("1. Pending");
+                    System.out.println("2. Approved");
+                    System.out.println("3. Rejected");
+                    System.out.println("4. Filled");
+                    System.out.print("Choice: ");
+                    int statusChoice = Integer.parseInt(scanner.nextLine());
+                    switch (statusChoice) {
+                        case 1: criteria.setStatus("Pending"); break;
+                        case 2: criteria.setStatus("Approved"); break;
+                        case 3: criteria.setStatus("Rejected"); break;
+                        case 4: criteria.setStatus("Filled"); break;
+                        default:
+                            System.out.println("Invalid choice!");
+                            return;
+                    }
                     break;
                 case 3:
                     System.out.print("Enter major: ");

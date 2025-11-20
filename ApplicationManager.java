@@ -78,8 +78,20 @@ public class ApplicationManager {
     /**
      * Approve a withdrawal and remove the application
      */
-    public void approveWithdrawal(Application app) {
+    public void approveWithdrawal(Application app, InternshipManager internshipManager) {
+        InternshipOpportunity internship = app.getInternship();
+        String appStatus = app.getStatus();
+        
+        // Remove the application
         applicationList.remove(app);
+        
+        // If the application was Accepted and internship is Filled, revert to Approved
+        if ("Accepted".equals(appStatus) && "Filled".equals(internship.getStatus())) {
+            long remainingAccepted = getAcceptedCount(internship);
+            if (remainingAccepted < internship.getNumSlots()) {
+                internshipManager.revertFilledStatus(internship);
+            }
+        }
     }
     
     /**

@@ -113,12 +113,44 @@ class SystemManager {
 
 class InternshipManager {
     - internshipList : List<InternshipOpportunity>
-    - filterHelper : InternshipFilter
+    - criteriaFilter : ICriteriaFilter
+    - studentEligibilityFilter : IStudentEligibilityFilter
+    - sorter : IInternshipSorter
     --
+    + InternshipManager(criteriaFilter : ICriteriaFilter, studentEligibilityFilter : IStudentEligibilityFilter, sorter : IInternshipSorter)
     + addInternship(opportunity : InternshipOpportunity) : void
     + approveInternship(opportunity : InternshipOpportunity) : void
     + rejectInternship(opportunity : InternshipOpportunity) : void
     + filterInternships(criteria : FilterCriteria) : List<InternshipOpportunity>
+}
+
+' ===========================================================
+' FILTER INTERFACES (Interface Segregation Principle)
+' ===========================================================
+interface ICriteriaFilter {
+    + applyFilter(list : List<InternshipOpportunity>, criteria : FilterCriteria) : List<InternshipOpportunity>
+}
+
+interface IStudentEligibilityFilter {
+    + filterForStudent(list : List<InternshipOpportunity>, student : Student) : List<InternshipOpportunity>
+}
+
+interface IInternshipSorter {
+    + sortAlphabetically(list : List<InternshipOpportunity>) : List<InternshipOpportunity>
+}
+
+' ===========================================================
+' FILTER IMPLEMENTATIONS
+' ===========================================================
+class CriteriaBasedFilter implements ICriteriaFilter, IInternshipSorter {
+    + applyFilter(list : List<InternshipOpportunity>, criteria : FilterCriteria) : List<InternshipOpportunity>
+    + sortAlphabetically(list : List<InternshipOpportunity>) : List<InternshipOpportunity>
+}
+
+class StudentEligibilityFilter implements ICriteriaFilter, IStudentEligibilityFilter, IInternshipSorter {
+    + applyFilter(list : List<InternshipOpportunity>, criteria : FilterCriteria) : List<InternshipOpportunity>
+    + filterForStudent(list : List<InternshipOpportunity>, student : Student) : List<InternshipOpportunity>
+    + sortAlphabetically(list : List<InternshipOpportunity>) : List<InternshipOpportunity>
 }
 
 class ApplicationManager {
@@ -127,10 +159,6 @@ class ApplicationManager {
     + submitApplication(student : Student, internship : InternshipOpportunity) : bool
     + updateApplicationStatus(app : Application, status : string) : void
     + handleWithdrawal(app : Application) : void
-}
-
-class InternshipFilter {
-    + applyFilter(list : List<InternshipOpportunity>, criteria : FilterCriteria) : List<InternshipOpportunity>
 }
 
 class ReportGenerator {
@@ -144,7 +172,15 @@ SystemManager *-- User
 
 InternshipManager *-- "0..*" InternshipOpportunity : manages >
 ApplicationManager *-- "0..*" Application : manages >
-InternshipManager *-- InternshipFilter
+
+' Dependency Inversion Principle (DIP) - InternshipManager depends on interfaces
+' Option 1: Three separate interface parameters for maximum flexibility
+InternshipManager o-- ICriteriaFilter : injected >
+InternshipManager o-- IStudentEligibilityFilter : injected >
+InternshipManager o-- IInternshipSorter : injected >
+
+' Filter implementations (Factory pattern)
+SystemManager ..> StudentEligibilityFilter : creates & injects >
 
 ' ===========================================================
 ' FACTORY CLASS

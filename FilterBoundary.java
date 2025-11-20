@@ -63,6 +63,72 @@ public class FilterBoundary {
     }
     
     /**
+     * Display student-specific filter menu with conditional editability
+     */
+    public void displayStudentFilterMenu(IUserBoundary boundary, FilterCriteria criteria, Student student) {
+        while (true) {
+            System.out.println("\n=== Filter Settings ===");
+            System.out.println("Current Filters:");
+            
+            // Determine what can be edited based on student year
+            boolean canEditLevel = student.getYearOfStudy() >= 3;
+            
+            // Show level filter (locked for year 1-2)
+            if (canEditLevel) {
+                System.out.println("1. Level: " + (criteria.getLevel() != null ? criteria.getLevel() : "None"));
+            } else {
+                System.out.println("1. Level: Basic (Locked for Year 1-2 students)");
+            }
+            
+            // Major is always locked to student's major
+            System.out.println("2. Major: " + student.getMajor() + " (Locked - matches your major)");
+            
+            // Status is always locked to Approved
+            System.out.println("3. Status: Approved (Locked - only approved internships shown)");
+            
+            // Closing date is always editable
+            System.out.println("4. Closing Date: " + (criteria.getClosingDate() != null ? criteria.getClosingDate() : "None"));
+            
+            System.out.println("5. Reset Filters");
+            System.out.println("6. Back to Main Menu");
+            System.out.print("Select option: ");
+            
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                
+                switch (choice) {
+                    case 1:
+                        if (canEditLevel) {
+                            setLevelFilter(criteria);
+                        } else {
+                            System.out.println("Level filter is locked for Year 1-2 students (Basic only).");
+                        }
+                        break;
+                    case 2:
+                        System.out.println("Major filter is locked to your major: " + student.getMajor());
+                        break;
+                    case 3:
+                        System.out.println("Status filter is locked to: Approved");
+                        break;
+                    case 4:
+                        setClosingDateFilter(criteria);
+                        break;
+                    case 5:
+                        criteria.reset();
+                        System.out.println("Filters reset.");
+                        break;
+                    case 6:
+                        return;
+                    default:
+                        System.out.println("Invalid choice!");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid number!");
+            }
+        }
+    }
+    
+    /**
      * Set level filter
      */
     private void setLevelFilter(FilterCriteria criteria) {

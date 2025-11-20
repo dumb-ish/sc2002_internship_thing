@@ -254,6 +254,12 @@ public class CLIStudentBoundary extends CLIUserBoundary {
     }
     
     @Override
+    public void updateFilter() {
+        FilterBoundary filterBoundary = new FilterBoundary();
+        filterBoundary.displayStudentFilterMenu(this, currentUser.getFilterCriteria(), student);
+    }
+    
+    @Override
     public boolean canEditField(String fieldName) {
         // Students can only edit filter settings
         return "filter".equalsIgnoreCase(fieldName);

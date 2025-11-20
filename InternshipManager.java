@@ -4,17 +4,30 @@ import java.util.List;
 /**
  * Manages all internship opportunities in the system.
  * Handles adding, approving, rejecting, and filtering of internships.
+ * Demonstrates Dependency Inversion Principle (DIP) by depending on interfaces.
+ * Accepts three separate interfaces for maximum flexibility.
  */
 public class InternshipManager {
     private List<InternshipOpportunity> internshipList;
-    private InternshipFilter filterHelper;
+    private ICriteriaFilter criteriaFilter;
+    private IStudentEligibilityFilter studentEligibilityFilter;
+    private IInternshipSorter sorter;
     
     /**
-     * Constructor
+     * Constructor with Dependency Injection
+     * Clear contract: requires three separate capabilities.
+     * Flexible: can mix and match different implementations.
+     * @param criteriaFilter Filter implementation for criteria-based filtering
+     * @param studentEligibilityFilter Filter implementation for student eligibility
+     * @param sorter Sorter implementation for alphabetical sorting
      */
-    public InternshipManager() {
+    public InternshipManager(ICriteriaFilter criteriaFilter,
+                            IStudentEligibilityFilter studentEligibilityFilter,
+                            IInternshipSorter sorter) {
         this.internshipList = new ArrayList<>();
-        this.filterHelper = new InternshipFilter();
+        this.criteriaFilter = criteriaFilter;
+        this.studentEligibilityFilter = studentEligibilityFilter;
+        this.sorter = sorter;
     }
     
     /**
@@ -42,8 +55,8 @@ public class InternshipManager {
      * Filter internships based on criteria
      */
     public List<InternshipOpportunity> filterInternships(FilterCriteria criteria) {
-        List<InternshipOpportunity> filtered = filterHelper.applyFilter(internshipList, criteria);
-        return filterHelper.sortAlphabetically(filtered);
+        List<InternshipOpportunity> filtered = criteriaFilter.applyFilter(internshipList, criteria);
+        return sorter.sortAlphabetically(filtered);
     }
     
     /**
@@ -58,13 +71,13 @@ public class InternshipManager {
      */
     public List<InternshipOpportunity> getVisibleInternshipsForStudent(Student student, FilterCriteria criteria) {
         // First apply student eligibility filter
-        List<InternshipOpportunity> eligible = filterHelper.filterForStudent(internshipList, student);
+        List<InternshipOpportunity> eligible = studentEligibilityFilter.filterForStudent(internshipList, student);
         
         // Then apply user's custom filter criteria
-        List<InternshipOpportunity> filtered = filterHelper.applyFilter(eligible, criteria);
+        List<InternshipOpportunity> filtered = criteriaFilter.applyFilter(eligible, criteria);
         
         // Finally sort alphabetically
-        return filterHelper.sortAlphabetically(filtered);
+        return sorter.sortAlphabetically(filtered);
     }
     
     /**
@@ -109,6 +122,15 @@ public class InternshipManager {
     public void updateFilledStatus(InternshipOpportunity opportunity, long acceptedCount) {
         if (acceptedCount >= opportunity.getNumSlots()) {
             opportunity.updateStatus("Filled");
+        }
+    }
+    
+    /**
+     * Revert internship status from Filled to Approved when slots become available
+     */
+    public void revertFilledStatus(InternshipOpportunity opportunity) {
+        if ("Filled".equals(opportunity.getStatus())) {
+            opportunity.updateStatus("Approved");
         }
     }
     

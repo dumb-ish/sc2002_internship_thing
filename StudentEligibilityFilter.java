@@ -3,14 +3,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Provides filtering capabilities for internship opportunities.
- * Implements the filtering logic based on various criteria.
+ * Student-specific filter implementation with eligibility checking.
+ * Handles both criteria-based filtering and student-specific eligibility rules.
+ * Implements all three filter interfaces separately.
  */
-public class InternshipFilter {
+public class StudentEligibilityFilter implements ICriteriaFilter, IStudentEligibilityFilter, IInternshipSorter {
     
     /**
      * Apply filter criteria to a list of internship opportunities
      */
+    @Override
     public List<InternshipOpportunity> applyFilter(List<InternshipOpportunity> list, FilterCriteria criteria) {
         if (criteria == null || !criteria.hasFilters()) {
             return list;
@@ -22,6 +24,43 @@ public class InternshipFilter {
             .filter(opp -> matchesStatus(opp, criteria.getStatus()))
             .filter(opp -> matchesClosingDate(opp, criteria.getClosingDate()))
             .collect(Collectors.toList());
+    }
+    
+    /**
+     * Filter opportunities based on student eligibility rules
+     */
+    @Override
+    public List<InternshipOpportunity> filterForStudent(List<InternshipOpportunity> list, Student student) {
+        return list.stream()
+            .filter(opp -> isEligibleForStudent(opp, student))
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Check if a student is eligible for an opportunity
+     * Handles eligibility rules including:
+     * - Visibility and application status
+     * - Major matching
+     * - Level restrictions for junior students (Year 1-2)
+     */
+    private boolean isEligibleForStudent(InternshipOpportunity opp, Student student) {
+        // Must be visible and open for applications
+        if (!opp.getVisibility() || !opp.isOpenForApplications()) {
+            return false;
+        }
+        
+        // Must match student's major (preferred major must be student's major)
+        if (!opp.getPreferredMajor().equalsIgnoreCase(student.getMajor())) {
+            return false;
+        }
+        
+        // Year 1-2 students (Junior) can only apply for Basic level
+        // Year 3+ students (Senior) can apply for any level
+        if (student.getYearOfStudy() <= 2 && !"Basic".equals(opp.getLevel())) {
+            return false;
+        }
+        
+        return true;
     }
     
     /**
@@ -66,39 +105,9 @@ public class InternshipFilter {
     }
     
     /**
-     * Filter opportunities for a specific student based on their eligibility
-     */
-    public List<InternshipOpportunity> filterForStudent(List<InternshipOpportunity> list, Student student) {
-        return list.stream()
-            .filter(opp -> isEligibleForStudent(opp, student))
-            .collect(Collectors.toList());
-    }
-    
-    /**
-     * Check if a student is eligible for an opportunity
-     */
-    private boolean isEligibleForStudent(InternshipOpportunity opp, Student student) {
-        // Must be visible and open for applications
-        if (!opp.getVisibility() || !opp.isOpenForApplications()) {
-            return false;
-        }
-        
-        // Must match student's major (preferred major must be student's major)
-        if (!opp.getPreferredMajor().equalsIgnoreCase(student.getMajor())) {
-            return false;
-        }
-        
-        // Year 1-2 students can only apply for Basic level
-        if (student.getYearOfStudy() <= 2 && !"Basic".equals(opp.getLevel())) {
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
      * Sort opportunities alphabetically by title
      */
+    @Override
     public List<InternshipOpportunity> sortAlphabetically(List<InternshipOpportunity> list) {
         return list.stream()
             .sorted((o1, o2) -> o1.getTitle().compareToIgnoreCase(o2.getTitle()))
