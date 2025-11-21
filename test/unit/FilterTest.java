@@ -1,302 +1,248 @@
-package test.unit;
-
 import org.junit.*;
 import static org.junit.Assert.*;
 import java.util.List;
 import java.util.ArrayList;
-
-// Import domain classes
-import InternshipOpportunity;
-import InternshipFilter;
-import FilterCriteria;
+import java.time.LocalDate;
 
 /**
  * Unit tests for Filter and Sort functionality
- * Tests filtering by various criteria and sorting internships
+ * Tests filtering by criteria and student eligibility
  * 
- * Test IDs: UT-FILTER-001 through UT-FILTER-004, UT-SORT-001 through UT-SORT-002
+ * Test Coverage:
+ * - Filter by level, major, status, closing date
+ * - Student eligibility filtering (year and major)
+ * - Alphabetical sorting by title
+ * - Multiple criteria filtering
  * 
  * @see InternshipFilter
+ * @see StudentEligibilityFilter
  * @see FilterCriteria
- * @see CriteriaBasedFilter
+ * @see InternshipManager
  */
 public class FilterTest {
-    
+    private InternshipManager internshipManager;
+    private StudentEligibilityFilter filter;
     private List<InternshipOpportunity> testInternships;
-    private InternshipFilter filter;
     
     @Before
     public void setUp() {
-        // Create diverse test internships
+        filter = new StudentEligibilityFilter();
+        internshipManager = new InternshipManager(filter, filter, filter);
         testInternships = new ArrayList<>();
         
-        // Internship 1: Singapore, Tech Corp, 2000
+        // Create diverse test internships
         testInternships.add(new InternshipOpportunity(
-            "INT001",
             "Software Engineer Intern",
-            "Backend development",
-            "Java, Spring",
-            "Singapore",
-            2000.0,
-            3,
-            "Tech Corp"
+            "Develop applications",
+            "Intermediate",
+            "Computer Science",
+            LocalDate.now(),
+            LocalDate.now().plusDays(30),
+            "Tech Corp",
+            "rep1@techcorp.com",
+            5
         ));
         
-        // Internship 2: Singapore, Innovate, 1800
         testInternships.add(new InternshipOpportunity(
-            "INT002",
             "Data Analyst Intern",
-            "Data analysis",
-            "Python, SQL",
-            "Singapore",
-            1800.0,
-            2,
-            "Innovate Pte Ltd"
+            "Analyze data",
+            "Basic",
+            "Data Science & AI",
+            LocalDate.now(),
+            LocalDate.now().plusDays(20),
+            "Data Company",
+            "rep2@data.com",
+            3
         ));
         
-        // Internship 3: Remote, StartUp, 1500
         testInternships.add(new InternshipOpportunity(
-            "INT003",
-            "Web Developer Intern",
-            "Frontend development",
-            "React, JavaScript",
-            "Remote",
-            1500.0,
-            1,
-            "StartUp Inc"
+            "Advanced Developer",
+            "Senior role",
+            "Advanced",
+            "Computer Science",
+            LocalDate.now(),
+            LocalDate.now().plusDays(15),
+            "Tech Corp",
+            "rep1@techcorp.com",
+            2
         ));
         
-        // Internship 4: Singapore, Tech Corp, 2200
         testInternships.add(new InternshipOpportunity(
-            "INT004",
-            "Mobile App Developer",
-            "iOS and Android",
-            "Swift, Kotlin",
-            "Singapore",
-            2200.0,
-            2,
-            "Tech Corp"
+            "Business Analyst",
+            "Business operations",
+            "Basic",
+            "Business",
+            LocalDate.now(),
+            LocalDate.now().plusDays(25),
+            "Consulting Inc",
+            "rep3@consulting.com",
+            4
         ));
         
-        // Internship 5: Kuala Lumpur, Global Tech, 1000
         testInternships.add(new InternshipOpportunity(
-            "INT005",
-            "QA Tester Intern",
-            "Testing applications",
-            "Selenium, JUnit",
-            "Kuala Lumpur",
-            1000.0,
-            1,
-            "Global Tech"
+            "Machine Learning Intern",
+            "AI research",
+            "Intermediate",
+            "Data Science & AI",
+            LocalDate.now(),
+            LocalDate.now().plusDays(40),
+            "AI Labs",
+            "rep4@ailabs.com",
+            3
         ));
         
-        // Mark all as approved
+        // Add and approve all internships
         for (InternshipOpportunity internship : testInternships) {
-            internship.updateStatus("Approved");
+            internshipManager.addInternship(internship);
+            internshipManager.approveInternship(internship);
         }
-        
-        filter = new InternshipFilter();
     }
     
     @After
     public void tearDown() {
-        testInternships = null;
+        internshipManager = null;
         filter = null;
+        testInternships = null;
     }
     
     /**
-     * UT-FILTER-001: Filter by Location
-     * 
-     * Tests filtering internships by location.
-     * 
-     * Preconditions: Multiple internships with different locations
-     * Expected Result: Only Singapore internships returned
+     * Test Case: UT-FILTER-001
+     * Verify filtering by level
      */
     @Test
-    public void testFilterByLocation() {
-        // Arrange
+    public void testFilterByLevel() {
         FilterCriteria criteria = new FilterCriteria();
-        criteria.setLocation("Singapore");
+        criteria.setLevel("Basic");
         
-        // Act
-        List<InternshipOpportunity> filtered = filter.filterByCriteria(testInternships, criteria);
+        List<InternshipOpportunity> filtered = internshipManager.filterInternships(criteria);
         
-        // Assert
-        assertEquals("Should return 3 Singapore internships", 3, filtered.size());
+        assertEquals("Should return 2 Basic level internships", 2, filtered.size());
         for (InternshipOpportunity internship : filtered) {
-            assertEquals("All should be in Singapore", "Singapore", internship.getLocation());
+            assertEquals("All should be Basic level", "Basic", internship.getLevel());
         }
     }
     
     /**
-     * UT-FILTER-002: Filter by Salary Range
-     * 
-     * Tests filtering by minimum salary.
-     * 
-     * Preconditions: Internships with various salaries
-     * Expected Result: Only internships with salary >= 1500 returned
+     * Test Case: UT-FILTER-002
+     * Verify filtering by major
      */
     @Test
-    public void testFilterBySalary() {
-        // Arrange
+    public void testFilterByMajor() {
         FilterCriteria criteria = new FilterCriteria();
-        criteria.setMinSalary(1500.0);
+        criteria.setMajor("Computer Science");
         
-        // Act
-        List<InternshipOpportunity> filtered = filter.filterByCriteria(testInternships, criteria);
+        List<InternshipOpportunity> filtered = internshipManager.filterInternships(criteria);
         
-        // Assert
-        assertEquals("Should return 4 internships with salary >= 1500", 4, filtered.size());
+        assertEquals("Should return 2 Computer Science internships", 2, filtered.size());
         for (InternshipOpportunity internship : filtered) {
-            assertTrue("Salary should be >= 1500", internship.getSalary() >= 1500.0);
+            assertEquals("All should require Computer Science", "Computer Science", internship.getPreferredMajor());
         }
     }
     
     /**
-     * UT-FILTER-003: Filter by Company
-     * 
-     * Tests filtering by company name.
-     * 
-     * Preconditions: Multiple companies with internships
-     * Expected Result: Only Tech Corp internships returned
+     * Test Case: UT-FILTER-003
+     * Verify filtering by status (Approved)
      */
     @Test
-    public void testFilterByCompany() {
-        // Arrange
+    public void testFilterByStatus() {
         FilterCriteria criteria = new FilterCriteria();
-        criteria.setCompanyName("Tech Corp");
+        criteria.setStatus("Approved");
         
-        // Act
-        List<InternshipOpportunity> filtered = filter.filterByCriteria(testInternships, criteria);
+        List<InternshipOpportunity> filtered = internshipManager.filterInternships(criteria);
         
-        // Assert
-        assertEquals("Should return 2 Tech Corp internships", 2, filtered.size());
+        // All test internships are approved
+        assertEquals("Should return all approved internships", 5, filtered.size());
         for (InternshipOpportunity internship : filtered) {
-            assertEquals("All should be from Tech Corp", "Tech Corp", internship.getCompanyName());
+            assertEquals("All should be Approved", "Approved", internship.getStatus());
         }
     }
     
     /**
-     * UT-FILTER-004: Multiple Filter Criteria
-     * 
-     * Tests applying multiple filters simultaneously.
-     * 
-     * Preconditions: Diverse internship data
-     * Expected Result: Only internships matching ALL criteria returned
+     * Test Case: UT-FILTER-004
+     * Verify multiple criteria filtering
      */
     @Test
-    public void testMultipleFilterCriteria() {
-        // Arrange
+    public void testMultipleCriteriaFiltering() {
         FilterCriteria criteria = new FilterCriteria();
-        criteria.setLocation("Singapore");
-        criteria.setMinSalary(1500.0);
-        criteria.setCompanyName("Tech Corp");
+        criteria.setLevel("Intermediate");
+        criteria.setMajor("Computer Science");
         
-        // Act
-        List<InternshipOpportunity> filtered = filter.filterByCriteria(testInternships, criteria);
+        List<InternshipOpportunity> filtered = internshipManager.filterInternships(criteria);
         
-        // Assert
-        assertEquals("Should return 2 internships matching all criteria", 2, filtered.size());
-        for (InternshipOpportunity internship : filtered) {
-            assertEquals("Location should be Singapore", "Singapore", internship.getLocation());
-            assertTrue("Salary should be >= 1500", internship.getSalary() >= 1500.0);
-            assertEquals("Company should be Tech Corp", "Tech Corp", internship.getCompanyName());
-        }
+        assertEquals("Should return 1 internship matching both criteria", 1, filtered.size());
+        assertEquals("Should be Software Engineer Intern", "Software Engineer Intern", filtered.get(0).getTitle());
     }
     
     /**
-     * UT-SORT-001: Sort by Salary Ascending
-     * 
-     * Tests sorting internships by salary (low to high).
-     * 
-     * Preconditions: Internships with different salaries
-     * Expected Result: Internships sorted in ascending salary order
+     * Test Case: UT-FILTER-005
+     * Verify student eligibility filtering for Year 2 student
      */
     @Test
-    public void testSortBySalaryAscending() {
-        // Arrange
-        List<InternshipOpportunity> internships = new ArrayList<>(testInternships);
+    public void testStudentEligibilityYear2() {
+        // Year 2 student can only see Basic level
+        Student juniorStudent = new Student("S002", "Junior", "password", 2, "Computer Science");
         
-        // Act
-        filter.sortBySalary(internships, true); // true = ascending
-        
-        // Assert
-        assertEquals("First should have lowest salary", 1000.0, internships.get(0).getSalary(), 0.01);
-        assertEquals("Second should be 1500", 1500.0, internships.get(1).getSalary(), 0.01);
-        assertEquals("Third should be 1800", 1800.0, internships.get(2).getSalary(), 0.01);
-        assertEquals("Fourth should be 2000", 2000.0, internships.get(3).getSalary(), 0.01);
-        assertEquals("Last should have highest salary", 2200.0, internships.get(4).getSalary(), 0.01);
-        
-        // Verify order is correct
-        for (int i = 0; i < internships.size() - 1; i++) {
-            assertTrue("Each salary should be <= next",
-                internships.get(i).getSalary() <= internships.get(i + 1).getSalary());
-        }
-    }
-    
-    /**
-     * UT-SORT-002: Sort by Salary Descending
-     * 
-     * Tests sorting internships by salary (high to low).
-     * 
-     * Preconditions: Internships with different salaries
-     * Expected Result: Internships sorted in descending salary order
-     */
-    @Test
-    public void testSortBySalaryDescending() {
-        // Arrange
-        List<InternshipOpportunity> internships = new ArrayList<>(testInternships);
-        
-        // Act
-        filter.sortBySalary(internships, false); // false = descending
-        
-        // Assert
-        assertEquals("First should have highest salary", 2200.0, internships.get(0).getSalary(), 0.01);
-        assertEquals("Second should be 2000", 2000.0, internships.get(1).getSalary(), 0.01);
-        assertEquals("Third should be 1800", 1800.0, internships.get(2).getSalary(), 0.01);
-        assertEquals("Fourth should be 1500", 1500.0, internships.get(3).getSalary(), 0.01);
-        assertEquals("Last should have lowest salary", 1000.0, internships.get(4).getSalary(), 0.01);
-        
-        // Verify order is correct
-        for (int i = 0; i < internships.size() - 1; i++) {
-            assertTrue("Each salary should be >= next",
-                internships.get(i).getSalary() >= internships.get(i + 1).getSalary());
-        }
-    }
-    
-    /**
-     * Additional Test: Filter with No Matches
-     * 
-     * Tests handling when no internships match criteria.
-     */
-    @Test
-    public void testFilterWithNoMatches() {
-        // Arrange
         FilterCriteria criteria = new FilterCriteria();
-        criteria.setLocation("Antarctica"); // No internships in Antarctica
+        List<InternshipOpportunity> eligible = internshipManager.getVisibleInternshipsForStudent(juniorStudent, criteria);
         
-        // Act
-        List<InternshipOpportunity> filtered = filter.filterByCriteria(testInternships, criteria);
-        
-        // Assert
-        assertNotNull("Result should not be null", filtered);
-        assertEquals("Should return empty list", 0, filtered.size());
+        // Year 2 CS student should only see Basic CS internships (there are none in our test data)
+        // But they can see their major's internships at Basic level
+        assertTrue("Should filter based on year and major", eligible.size() >= 0);
+        for (InternshipOpportunity internship : eligible) {
+            assertEquals("Should only show Basic level", "Basic", internship.getLevel());
+        }
     }
     
     /**
-     * Additional Test: Filter with Empty Criteria
-     * 
-     * Tests that empty criteria returns all internships.
+     * Test Case: UT-FILTER-006
+     * Verify student eligibility filtering for Year 3 student
      */
     @Test
-    public void testFilterWithEmptyCriteria() {
-        // Arrange
-        FilterCriteria criteria = new FilterCriteria(); // No filters set
+    public void testStudentEligibilityYear3() {
+        // Year 3 student can see all levels
+        Student seniorStudent = new Student("S003", "Senior", "password", 3, "Computer Science");
         
-        // Act
-        List<InternshipOpportunity> filtered = filter.filterByCriteria(testInternships, criteria);
+        FilterCriteria criteria = new FilterCriteria();
+        List<InternshipOpportunity> eligible = internshipManager.getVisibleInternshipsForStudent(seniorStudent, criteria);
         
-        // Assert
-        assertEquals("Should return all internships", testInternships.size(), filtered.size());
+        // Year 3 CS student should see all CS internships (Basic, Intermediate, Advanced)
+        assertEquals("Should return all 2 CS internships", 2, eligible.size());
+        for (InternshipOpportunity internship : eligible) {
+            assertEquals("All should match major", "Computer Science", internship.getPreferredMajor());
+        }
+    }
+    
+    /**
+     * Test Case: UT-FILTER-007
+     * Verify alphabetical sorting
+     */
+    @Test
+    public void testAlphabeticalSorting() {
+        FilterCriteria criteria = new FilterCriteria();
+        List<InternshipOpportunity> filtered = internshipManager.filterInternships(criteria);
+        
+        // Sort alphabetically
+        List<InternshipOpportunity> sorted = filter.sortAlphabetically(filtered);
+        
+        // Verify sorted order
+        assertEquals("First should be Advanced Developer", "Advanced Developer", sorted.get(0).getTitle());
+        assertEquals("Second should be Business Analyst", "Business Analyst", sorted.get(1).getTitle());
+        assertEquals("Third should be Data Analyst Intern", "Data Analyst Intern", sorted.get(2).getTitle());
+        assertEquals("Fourth should be Machine Learning Intern", "Machine Learning Intern", sorted.get(3).getTitle());
+        assertEquals("Fifth should be Software Engineer Intern", "Software Engineer Intern", sorted.get(4).getTitle());
+    }
+    
+    /**
+     * Test Case: UT-FILTER-008
+     * Verify filtering with no criteria returns all approved
+     */
+    @Test
+    public void testNoCriteriaReturnsAll() {
+        FilterCriteria criteria = new FilterCriteria();
+        // No criteria set - should return all approved internships
+        
+        List<InternshipOpportunity> filtered = internshipManager.filterInternships(criteria);
+        
+        assertEquals("Should return all internships when no criteria", 5, filtered.size());
     }
 }

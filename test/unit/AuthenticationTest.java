@@ -1,13 +1,15 @@
-package test.unit;
-
 import org.junit.*;
 import static org.junit.Assert.*;
+import java.io.File;
 
 /**
  * Unit tests for Authentication functionality
- * Tests user login, registration, and credential validation
+ * Tests user login and company representative registration
  * 
- * Test IDs: UT-AUTH-001 through UT-AUTH-008
+ * Test Coverage:
+ * - User authentication for Students, Company Representatives, and Staff
+ * - Company representative registration
+ * - Password validation
  * 
  * @see SystemManager
  * @see User
@@ -16,226 +18,162 @@ import static org.junit.Assert.*;
  * @see CareerCenterStaff
  */
 public class AuthenticationTest {
-    
     private SystemManager systemManager;
     
-    /**
-     * Set up test environment before each test
-     * Initializes SystemManager with test data
-     */
     @Before
     public void setUp() {
-        // Initialize system manager with test data
         systemManager = new SystemManager();
-        // Load test CSV files or create test users programmatically
+        
+        // Load test data from CSV files
+        systemManager.initializeSystem(
+            "sample_student_list.csv",
+            "sample_staff_list.csv",
+            "sample_company_representative_list.csv"
+        );
     }
     
-    /**
-     * Clean up after each test
-     */
     @After
     public void tearDown() {
-        // Clean up resources
         systemManager = null;
     }
     
     /**
-     * UT-AUTH-001: Valid Login - Student
-     * 
-     * Tests that a student can successfully login with valid credentials.
-     * 
-     * Preconditions: Student S001 exists with password "password"
-     * Expected Result: Authentication successful, Student object returned
+     * Test Case: UT-AUTH-001
+     * Verify successful student login with valid credentials
      */
     @Test
     public void testValidStudentLogin() {
-        // Arrange
-        String userID = "S001";
-        String password = "password";
+        // Test with first student from CSV
+        User user = systemManager.authenticateUser("U2310001A", "password");
         
-        // Act
-        User user = systemManager.authenticateUser(userID, password);
-        
-        // Assert
         assertNotNull("User should not be null for valid credentials", user);
-        assertTrue("User should be instance of Student", user instanceof Student);
-        assertEquals("User ID should match", userID, user.getUserID());
+        assertTrue("User should be Student", user instanceof Student);
+        assertEquals("User ID should match", "U2310001A", user.getUserID());
     }
     
     /**
-     * UT-AUTH-002: Valid Login - Company Representative
-     * 
-     * Tests that an approved company representative can login successfully.
-     * 
-     * Preconditions: Company rep exists with "Approved" status
-     * Expected Result: Authentication successful, CompanyRepresentative returned
+     * Test Case: UT-AUTH-002
+     * Verify successful company representative login
      */
     @Test
     public void testValidCompanyRepLogin() {
-        // Arrange
-        String userID = "hr@techcorp.com";
-        String password = "password";
+        // Register a new company rep first since CSV has none
+        CompanyRepresentative newRep = systemManager.registerCompanyRepresentative(
+            "test@company.com", "Test Rep", "password", "Test Company", "HR", "Manager"
+        );
+        assertNotNull("Registration should succeed", newRep);
         
-        // Act
-        User user = systemManager.authenticateUser(userID, password);
+        // Now try to login
+        User user = systemManager.authenticateUser("test@company.com", "password");
         
-        // Assert
         assertNotNull("User should not be null", user);
         assertTrue("User should be CompanyRepresentative", user instanceof CompanyRepresentative);
-        
         CompanyRepresentative rep = (CompanyRepresentative) user;
-        assertEquals("Status should be Approved", "Approved", rep.getStatus());
+        assertEquals("Email should match", "test@company.com", rep.getUserID());
     }
     
     /**
-     * UT-AUTH-003: Valid Login - Career Center Staff
-     * 
-     * Tests that career center staff can login successfully.
-     * 
-     * Preconditions: Staff STAFF001 exists
-     * Expected Result: Authentication successful, CareerCenterStaff returned
+     * Test Case: UT-AUTH-003
+     * Verify successful staff login
      */
     @Test
     public void testValidStaffLogin() {
-        // Arrange
-        String userID = "STAFF001";
-        String password = "password";
+        // Test with staff from CSV (sng001)
+        User user = systemManager.authenticateUser("sng001", "password");
         
-        // Act
-        User user = systemManager.authenticateUser(userID, password);
-        
-        // Assert
         assertNotNull("User should not be null", user);
         assertTrue("User should be CareerCenterStaff", user instanceof CareerCenterStaff);
+        assertEquals("User ID should match", "sng001", user.getUserID());
     }
     
     /**
-     * UT-AUTH-004: Invalid Login - Wrong Password
-     * 
-     * Tests that authentication fails with incorrect password.
-     * 
-     * Preconditions: User S001 exists
-     * Expected Result: Authentication fails, null returned
+     * Test Case: UT-AUTH-004
+     * Verify login fails with wrong password
      */
     @Test
-    public void testInvalidPassword() {
-        // Arrange
-        String userID = "S001";
-        String wrongPassword = "wrongpassword";
+    public void testInvalidPasswordLogin() {
+        User user = systemManager.authenticateUser("U2310001A", "wrongpassword");
         
-        // Act
-        User user = systemManager.authenticateUser(userID, wrongPassword);
-        
-        // Assert
         assertNull("Authentication should fail with wrong password", user);
     }
     
     /**
-     * UT-AUTH-005: Invalid Login - Non-existent User
-     * 
-     * Tests that authentication fails for non-existent user.
-     * 
-     * Preconditions: None
-     * Expected Result: Authentication fails, null returned
+     * Test Case: UT-AUTH-005
+     * Verify login fails with non-existent user ID
      */
     @Test
-    public void testNonExistentUser() {
-        // Arrange
-        String userID = "INVALID123";
-        String password = "password";
+    public void testNonExistentUserLogin() {
+        User user = systemManager.authenticateUser("NONEXISTENT", "password");
         
-        // Act
-        User user = systemManager.authenticateUser(userID, password);
-        
-        // Assert
         assertNull("Authentication should fail for non-existent user", user);
     }
     
     /**
-     * UT-AUTH-006: Invalid Login - Rejected Company Representative
-     * 
-     * Tests that rejected company representative cannot login.
-     * 
-     * Preconditions: Company rep exists with "Rejected" status
-     * Expected Result: Login blocked
+     * Test Case: UT-AUTH-006
+     * Verify company representative registration succeeds with valid data
      */
     @Test
-    public void testRejectedCompanyRepLogin() {
-        // Arrange
-        String userID = "rejected@company.com";
-        String password = "password";
-        
-        // Act
-        User user = systemManager.authenticateUser(userID, password);
-        
-        // Assert
-        // Either returns null or returns user but with Rejected status
-        if (user != null) {
-            assertTrue("User should be CompanyRepresentative", user instanceof CompanyRepresentative);
-            CompanyRepresentative rep = (CompanyRepresentative) user;
-            assertEquals("Status should be Rejected", "Rejected", rep.getStatus());
-            // UI should block login for rejected status
-        } else {
-            // Alternative: system blocks login completely
-            assertNull("Rejected rep should not be able to login", user);
-        }
-    }
-    
-    /**
-     * UT-AUTH-007: Valid Registration
-     * 
-     * Tests successful company representative registration.
-     * 
-     * Preconditions: Email not already registered
-     * Expected Result: Registration successful, account with "Pending" status
-     */
-    @Test
-    public void testValidRegistration() {
-        // Arrange
+    public void testCompanyRepRegistration() {
         String email = "newrep@company.com";
-        String name = "John Doe";
+        String name = "New Representative";
         String password = "password123";
-        String company = "Tech Corp";
+        String company = "New Company";
         String department = "HR";
         String position = "Recruiter";
         
-        // Act
         CompanyRepresentative rep = systemManager.registerCompanyRepresentative(
             email, name, password, company, department, position
         );
         
-        // Assert
         assertNotNull("Registration should succeed", rep);
         assertEquals("Email should match", email, rep.getUserID());
         assertEquals("Name should match", name, rep.getName());
-        assertEquals("Status should be Pending", "Pending", rep.getStatus());
         assertEquals("Company should match", company, rep.getCompanyName());
+        assertEquals("Initial status should be Pending", "Pending", rep.getStatus());
     }
     
     /**
-     * UT-AUTH-008: Duplicate Email Registration
-     * 
-     * Tests that registration fails for duplicate email.
-     * 
-     * Preconditions: Email already registered
-     * Expected Result: Registration fails, null returned
+     * Test Case: UT-AUTH-007
+     * Verify duplicate email registration is prevented
      */
     @Test
     public void testDuplicateEmailRegistration() {
-        // Arrange
-        String existingEmail = "hr@techcorp.com"; // Assume this exists
-        String name = "Jane Doe";
-        String password = "password";
-        String company = "Another Company";
-        String department = "HR";
-        String position = "Manager";
-        
-        // Act
-        CompanyRepresentative rep = systemManager.registerCompanyRepresentative(
-            existingEmail, name, password, company, department, position
+        // First registration
+        String email = "duplicate@company.com";
+        CompanyRepresentative rep1 = systemManager.registerCompanyRepresentative(
+            email, "Rep 1", "password", "Company", "HR", "Manager"
         );
         
-        // Assert
-        assertNull("Registration should fail for duplicate email", rep);
+        assertNotNull("First registration should succeed", rep1);
+        
+        // Attempt duplicate registration
+        CompanyRepresentative rep2 = systemManager.registerCompanyRepresentative(
+            email, "Rep 2", "password", "Company", "HR", "Manager"
+        );
+        
+        assertNull("Registration should fail for duplicate email", rep2);
+    }
+    
+    /**
+     * Test Case: UT-AUTH-008
+     * Verify password change functionality
+     */
+    @Test
+    public void testPasswordChange() {
+        // Authenticate first
+        User user = systemManager.authenticateUser("U2310001A", "password");
+        assertNotNull("Initial login should succeed", user);
+        
+        // Change password
+        String newPassword = "newpassword123";
+        user.setPassword(newPassword);
+        
+        // Try logging in with new password
+        User userWithNewPassword = systemManager.authenticateUser("U2310001A", newPassword);
+        assertNotNull("Login with new password should succeed", userWithNewPassword);
+        
+        // Verify old password doesn't work
+        User userWithOldPassword = systemManager.authenticateUser("U2310001A", "password");
+        assertNull("Login with old password should fail", userWithOldPassword);
     }
 }

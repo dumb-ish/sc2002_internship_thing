@@ -98,57 +98,6 @@ javac -encoding UTF-8 -source 8 -target 8 -d . *.java && java InternshipPlacemen
 
 The project includes comprehensive unit tests and black-box test cases aligned with AppendixA requirements.
 
-### 📚 Test Documentation
-
-- **[IMPLEMENTATION_SUMMARY.md](test/IMPLEMENTATION_SUMMARY.md)** ⭐ Start here - Complete testing overview
-- **[APPENDIX_A_TEST_CASES.md](test/blackbox/APPENDIX_A_TEST_CASES.md)** ⭐ All 24 AppendixA test procedures
-- **[Unit Test README](test/unit/README.md)** - Unit testing guide with implementation notes
-- **[Test Plan](test/TEST_PLAN.md)** - Comprehensive test plan document
-- **[Test Execution Guide](test/TEST_EXECUTION_GUIDE.md)** - Step-by-step execution instructions
-
-### 🎯 Quick Start: AppendixA Testing (Recommended)
-
-The fastest way to test all 24 AppendixA requirements:
-
-1. **Compile and run the application:**
-   ```powershell
-   javac -encoding UTF-8 -source 8 -target 8 -d . *.java
-   java InternshipPlacementSystem
-   ```
-
-2. **Open the black-box test script:**
-   - File: [test/blackbox/APPENDIX_A_TEST_CASES.md](test/blackbox/APPENDIX_A_TEST_CASES.md)
-   - Contains all 24 test cases with step-by-step procedures
-
-3. **Execute tests manually:**
-   - Follow procedures for TC001 through TC024
-   - Mark checkboxes (☐ PASS / ☐ FAIL)
-   - Test data includes: U2310001A, STAFF001, hr@techcorp.com (all use password: "password")
-
-### Test Structure
-
-```
-test/
-├── IMPLEMENTATION_SUMMARY.md        # Complete overview of testing framework ⭐
-├── TEST_PLAN.md                    # Comprehensive test plan
-├── TEST_EXECUTION_GUIDE.md         # Execution instructions
-├── TEST_RESULTS_TEMPLATE.md        # Results recording template
-├── blackbox/
-│   └── APPENDIX_A_TEST_CASES.md    # All 24 AppendixA test procedures ⭐
-├── unit/
-│   ├── README.md                   # Unit testing guide
-│   ├── AuthenticationTest.java     # 8 authentication tests
-│   ├── ApplicationTest.java        # 8 application tests
-│   ├── InternshipTest.java         # 6 internship tests
-│   └── FilterTest.java             # 8 filter/sort tests
-└── resources/
-    ├── README.md                   # Test data documentation
-    ├── test_students.csv           # 8 test students
-    ├── test_staff.csv              # 3 staff members
-    ├── test_company_representatives.csv  # 5 company reps
-    └── test_internships.csv        # 8 internships
-```
-
 ### Quick Test Setup
 
 1. **Download JUnit libraries:**
@@ -171,65 +120,59 @@ curl -L "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-
 
 **Windows:**
 ```powershell
-javac -encoding UTF-8 -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar" -d . test\unit\*.java
+javac -encoding UTF-8 -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar" test\unit\*.java
 ```
 
 **macOS/Linux:**
 ```bash
-javac -encoding UTF-8 -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar" -d . test/unit/*.java
+javac -encoding UTF-8 -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar" test/unit/*.java
 ```
 
 3. **Run all unit tests:**
 
 **Windows:**
 ```powershell
-java -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar" org.junit.runner.JUnitCore AuthenticationTest ApplicationTest InternshipTest FilterTest
+java -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar;test\unit" org.junit.runner.JUnitCore AuthenticationTest ApplicationTest InternshipTest FilterTest
 ```
 
 **macOS/Linux:**
 ```bash
-java -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar" org.junit.runner.JUnitCore AuthenticationTest ApplicationTest InternshipTest FilterTest
+java -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar:test/unit" org.junit.runner.JUnitCore AuthenticationTest ApplicationTest InternshipTest FilterTest
 ```
 
-### Test Categories
+### Running Individual Test Classes
 
-#### Unit Tests
-- **Authentication Tests** (UT-AUTH-001 to UT-AUTH-008)
-  - Login validation
-  - Registration processes
-  - Credential verification
+**Run specific test suites:**
 
-- **Application Tests** (UT-APP-001 to UT-APP-008)
-  - Application submission
-  - Status updates
-  - Withdrawal handling
+**Windows:**
+```powershell
+# Authentication Tests (8 tests)
+java -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar;test\unit" org.junit.runner.JUnitCore AuthenticationTest
 
-- **Internship Tests** (UT-INT-001 to UT-INT-006)
-  - Posting creation
-  - Approval workflows
-  - Data validation
+# Application Tests (8 tests)
+java -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar;test\unit" org.junit.runner.JUnitCore ApplicationTest
 
-- **Filter & Sort Tests** (UT-FILTER-001 to UT-SORT-002)
-  - Location/salary/company filtering
-  - Ascending/descending sorting
+# Internship Tests (6 tests)
+java -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar;test\unit" org.junit.runner.JUnitCore InternshipTest
 
-#### Black-Box Tests
-- **Student Workflows** (BB-STU-001 to BB-STU-004)
-- **Company Representative Workflows** (BB-REP-001 to BB-REP-004)
-- **Career Center Staff Workflows** (BB-STAFF-001 to BB-STAFF-004)
-- **Edge Cases & Error Handling** (BB-EDGE-001 to BB-EDGE-007)
+# Filter Tests (8 tests)
+java -cp ".;lib\junit-4.13.2.jar;lib\hamcrest-core-1.3.jar;test\unit" org.junit.runner.JUnitCore FilterTest
+```
 
-### Running Black-Box Tests
+**macOS/Linux:**
+```bash
+# Authentication Tests
+java -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar:test/unit" org.junit.runner.JUnitCore AuthenticationTest
 
-Black-box tests are performed manually by following the detailed test scripts in the [Test Execution Guide](test/TEST_EXECUTION_GUIDE.md).
+# Application Tests
+java -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar:test/unit" org.junit.runner.JUnitCore ApplicationTest
 
-1. Start the application:
-   ```bash
-   java InternshipPlacementSystem
-   ```
+# Internship Tests
+java -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar:test/unit" org.junit.runner.JUnitCore InternshipTest
 
-2. Follow test case steps in TEST_EXECUTION_GUIDE.md
-3. Record results (✅ PASS / ❌ FAIL)
+# Filter Tests
+java -cp ".:lib/junit-4.13.2.jar:lib/hamcrest-core-1.3.jar:test/unit" org.junit.runner.JUnitCore FilterTest
+```
 
 ## JavaDoc Documentation
 

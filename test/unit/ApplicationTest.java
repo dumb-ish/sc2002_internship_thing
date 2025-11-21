@@ -1,20 +1,18 @@
-package test.unit;
-
 import org.junit.*;
 import static org.junit.Assert.*;
-
-// Import domain classes
-import ApplicationManager;
-import Application;
-import Student;
-import InternshipOpportunity;
-import SystemManager;
+import java.time.LocalDate;
 
 /**
  * Unit tests for Application Management functionality
  * Tests application submission, status updates, and withdrawal
  * 
- * Test IDs: UT-APP-001 through UT-APP-008
+ * Test Coverage:
+ * - Application submission with validation
+ * - 3-application limit enforcement
+ * - Duplicate application prevention
+ * - Year-based eligibility checking
+ * - Application status updates
+ * - Withdrawal handling
  * 
  * @see ApplicationManager
  * @see Application
@@ -24,248 +22,236 @@ import SystemManager;
 public class ApplicationTest {
     
     private ApplicationManager applicationManager;
-    private SystemManager systemManager;
+    private InternshipManager internshipManager;
     private Student testStudent;
     private InternshipOpportunity testInternship;
     
     @Before
     public void setUp() {
-        // Initialize managers
-        systemManager = new SystemManager();
-        applicationManager = systemManager.getApplicationManager();
+        // Initialize managers with proper dependencies
+        StudentEligibilityFilter filter = new StudentEligibilityFilter();
+        internshipManager = new InternshipManager(filter, filter, filter);
+        applicationManager = new ApplicationManager();
         
-        // Create test student
+        // Create test student (Year 3, Computer Science)
         testStudent = new Student("S001", "Test Student", "password", 3, "Computer Science");
         
-        // Create test internship - needs correct constructor parameters
-        // Note: InternshipOpportunity constructor may differ - adjust as needed
+        // Create test internship with proper constructor
         testInternship = new InternshipOpportunity(
-            "Software Engineering Intern",
-            "Backend development",
+            "Software Engineer Intern",
+            "Develop web applications",
             "Intermediate",
             "Computer Science",
-            null, // openingDate
-            null, // closingDate
+            LocalDate.now(),
+            LocalDate.now().plusDays(30),
             "Tech Corp",
             "hr@techcorp.com",
-            3
+            5
         );
-        testInternship.updateStatus("Approved");
+        
+        // Approve internship so it's open for applications
+        internshipManager.addInternship(testInternship);
+        internshipManager.approveInternship(testInternship);
     }
     
     @After
     public void tearDown() {
         applicationManager = null;
-        systemManager = null;
+        internshipManager = null;
         testStudent = null;
         testInternship = null;
     }
     
     /**
-     * UT-APP-001: Valid Application Submission
-     * 
-     * Tests that student can successfully submit application.
-     * 
-     * Preconditions: Student has no active application, internship available
-     * Expected Result: Application created with "Pending" status
+     * Test Case: UT-APP-001
+     * Verify successful application submission
      */
     @Test
-    public void testValidApplicationSubmission() {
-        // Arrange
-        assertNull("Student should have no active application", testStudent.getActiveApplication());
+    public void testSubmitApplication() {
+        boolean success = applicationManager.submitApplication(testStudent, testInternship);
         
-        // Act
-        Application app = applicationManager.submitApplication(testStudent, testInternship);
+        assertTrue("Application should be submitted successfully", success);
         
-        // Assert
-        assertNotNull("Application should be created", app);
-        assertEquals("Application status should be Pending", "Pending", app.getStatus());
-        assertEquals("Student should be set", testStudent, app.getStudent());
-        assertEquals("Internship should be set", testInternship, app.getInternship());
-        assertEquals("Student activeApplication should be set", app, testStudent.getActiveApplication());
+        // Verify application was created
+        java.util.List<Application> apps = applicationManager.getApplicationsByStudent(testStudent);
+        assertEquals("Student should have 1 application", 1, apps.size());
     }
     
     /**
-     * UT-APP-002: Duplicate Application Prevention
-     * 
-     * Tests that student cannot submit multiple applications.
-     * 
-     * Preconditions: Student has active application
-     * Expected Result: Second application blocked
+     * Test Case: UT-APP-002
+     * Verify 3-application limit is enforced
+     */
+    @Test
+    public void testApplicationLimit() {
+        // Create 3 different internships
+        InternshipOpportunity internship1 = new InternshipOpportunity(
+            "Intern 1", "Desc", "Intermediate", "Computer Science",
+            LocalDate.now(), LocalDate.now().plusDays(30), "Company 1", "rep1@company.com", 5
+        );
+        InternshipOpportunity internship2 = new InternshipOpportunity(
+            "Intern 2", "Desc", "Intermediate", "Computer Science",
+            LocalDate.now(), LocalDate.now().plusDays(30), "Company 2", "rep2@company.com", 5
+        );
+        InternshipOpportunity internship3 = new InternshipOpportunity(
+            "Intern 3", "Desc", "Intermediate", "Computer Science",
+            LocalDate.now(), LocalDate.now().plusDays(30), "Company 3", "rep3@company.com", 5
+        );
+        InternshipOpportunity internship4 = new InternshipOpportunity(
+            "Intern 4", "Desc", "Intermediate", "Computer Science",
+            LocalDate.now(), LocalDate.now().plusDays(30), "Company 4", "rep4@company.com", 5
+        );
+        
+        // Approve all internships
+        internshipManager.addInternship(internship1);
+        internshipManager.approveInternship(internship1);
+        internshipManager.addInternship(internship2);
+        internshipManager.approveInternship(internship2);
+        internshipManager.addInternship(internship3);
+        internshipManager.approveInternship(internship3);
+        internshipManager.addInternship(internship4);
+        internshipManager.approveInternship(internship4);
+        
+        // Submit 3 applications
+        assertTrue("First application should succeed", applicationManager.submitApplication(testStudent, internship1));
+        assertTrue("Second application should succeed", applicationManager.submitApplication(testStudent, internship2));
+        assertTrue("Third application should succeed", applicationManager.submitApplication(testStudent, internship3));
+        
+        // Fourth should fail (limit reached)
+        assertFalse("Fourth application should fail due to limit", applicationManager.submitApplication(testStudent, internship4));
+    }
+    
+    /**
+     * Test Case: UT-APP-003
+     * Verify duplicate applications are prevented
      */
     @Test
     public void testDuplicateApplicationPrevention() {
-        // Arrange
-        Application firstApp = applicationManager.submitApplication(testStudent, testInternship);
-        assertNotNull("First application should succeed", firstApp);
+        // First application
+        boolean firstSubmit = applicationManager.submitApplication(testStudent, testInternship);
+        assertTrue("First application should succeed", firstSubmit);
         
-        // Create another internship
-        InternshipOpportunity anotherInternship = new InternshipOpportunity(
-            "Data Analyst Intern",
-            "Data analysis",
-            "Basic",
-            "Data Science",
-            null,
-            null,
-            "Tech Corp",
-            "hr@techcorp.com",
-            2
-        );
-        anotherInternship.updateStatus("Approved");
-        
-        // Act
-        Application secondApp = applicationManager.submitApplication(testStudent, anotherInternship);
-        
-        // Assert
-        assertNull("Second application should be blocked", secondApp);
-        assertEquals("Student should still have only first application", firstApp, testStudent.getActiveApplication());
+        // Second application to same internship
+        boolean secondSubmit = applicationManager.submitApplication(testStudent, testInternship);
+        assertFalse("Duplicate application should be prevented", secondSubmit);
     }
     
     /**
-     * UT-APP-003: Application to Filled Internship
-     * 
-     * Tests that cannot apply to filled internship.
-     * 
-     * Preconditions: Internship at capacity
-     * Expected Result: Application blocked
+     * Test Case: UT-APP-004
+     * Verify year-based eligibility restrictions (Year 1-2 students)
      */
     @Test
-    public void testApplicationToFilledInternship() {
-        // Arrange
-        InternshipOpportunity smallInternship = new InternshipOpportunity(
-            "Small Internship",
-            "Description",
-            "Basic",
-            "Computer Science",
-            null,
-            null,
-            "Company",
-            "rep@company.com",
-            1 // Only 1 slot
+    public void testYearBasedEligibility() {
+        // Create Year 2 student
+        Student juniorStudent = new Student("S002", "Junior Student", "password", 2, "Computer Science");
+        
+        // Create Advanced level internship
+        InternshipOpportunity advancedInternship = new InternshipOpportunity(
+            "Senior Engineer", "Advanced role", "Advanced", "Computer Science",
+            LocalDate.now(), LocalDate.now().plusDays(30), "Tech Corp", "hr@techcorp.com", 5
         );
-        smallInternship.updateStatus("Approved");
+        internshipManager.addInternship(advancedInternship);
+        internshipManager.approveInternship(advancedInternship);
         
-        // Fill the internship
-        Student otherStudent = new Student("S002", "Other Student", "password", 3, "CS");
-        Application fillingApp = applicationManager.submitApplication(otherStudent, smallInternship);
-        fillingApp.updateStatus("Successful");
-        fillingApp.updateStatus("Accepted"); // This should fill the slot
+        // Year 2 student should not be able to apply for Advanced
+        boolean success = applicationManager.submitApplication(juniorStudent, advancedInternship);
+        assertFalse("Year 2 student should not be able to apply for Advanced level", success);
         
-        // Act
-        Application app = applicationManager.submitApplication(testStudent, smallInternship);
+        // But should be able to apply for Basic
+        InternshipOpportunity basicInternship = new InternshipOpportunity(
+            "Basic Intern", "Entry level", "Basic", "Computer Science",
+            LocalDate.now(), LocalDate.now().plusDays(30), "Tech Corp", "hr@techcorp.com", 5
+        );
+        internshipManager.addInternship(basicInternship);
+        internshipManager.approveInternship(basicInternship);
         
-        // Assert
-        assertNull("Cannot apply to filled internship", app);
+        boolean basicSuccess = applicationManager.submitApplication(juniorStudent, basicInternship);
+        assertTrue("Year 2 student should be able to apply for Basic level", basicSuccess);
     }
     
     /**
-     * UT-APP-004: Accept Application
-     * 
-     * Tests company rep accepting application.
-     * 
-     * Preconditions: Application with "Pending" status
-     * Expected Result: Status changed to "Successful"
+     * Test Case: UT-APP-005
+     * Verify application status updates (Successful/Unsuccessful)
+     */
+    @Test
+    public void testApplicationStatusUpdate() {
+        // Submit application
+        applicationManager.submitApplication(testStudent, testInternship);
+        
+        // Get the application
+        Application app = applicationManager.getApplicationsByStudent(testStudent).get(0);
+        assertEquals("Initial status should be Pending", "Pending", app.getStatus());
+        
+        // Update status to Successful
+        applicationManager.updateApplicationStatus(app, "Successful");
+        assertEquals("Status should be Successful", "Successful", app.getStatus());
+        
+        // Create another application and mark unsuccessful
+        InternshipOpportunity internship2 = new InternshipOpportunity(
+            "Another Intern", "Desc", "Intermediate", "Computer Science",
+            LocalDate.now(), LocalDate.now().plusDays(30), "Company", "rep@company.com", 5
+        );
+        internshipManager.addInternship(internship2);
+        internshipManager.approveInternship(internship2);
+        
+        applicationManager.submitApplication(testStudent, internship2);
+        Application app2 = applicationManager.getApplicationsByInternship(internship2).get(0);
+        applicationManager.updateApplicationStatus(app2, "Unsuccessful");
+        assertEquals("Status should be Unsuccessful", "Unsuccessful", app2.getStatus());
+    }
+    
+    /**
+     * Test Case: UT-APP-006
+     * Verify student can accept a successful application
      */
     @Test
     public void testAcceptApplication() {
-        // Arrange
-        Application app = applicationManager.submitApplication(testStudent, testInternship);
-        assertEquals("Initial status should be Pending", "Pending", app.getStatus());
+        // Submit and approve application
+        applicationManager.submitApplication(testStudent, testInternship);
+        Application app = applicationManager.getApplicationsByStudent(testStudent).get(0);
+        applicationManager.updateApplicationStatus(app, "Successful");
         
-        // Act
-        app.updateStatus("Successful");
-        
-        // Assert
-        assertEquals("Status should be Successful", "Successful", app.getStatus());
-    }
-    
-    /**
-     * UT-APP-005: Reject Application
-     * 
-     * Tests company rep rejecting application.
-     * 
-     * Preconditions: Application with "Pending" status
-     * Expected Result: Status "Unsuccessful", student freed
-     */
-    @Test
-    public void testRejectApplication() {
-        // Arrange
-        Application app = applicationManager.submitApplication(testStudent, testInternship);
-        
-        // Act
-        app.updateStatus("Unsuccessful");
-        applicationManager.handleRejection(app); // Should clear student's activeApplication
-        
-        // Assert
-        assertEquals("Status should be Unsuccessful", "Unsuccessful", app.getStatus());
-        assertNull("Student activeApplication should be cleared", testStudent.getActiveApplication());
-    }
-    
-    /**
-     * UT-APP-006: Student Accepts Offer
-     * 
-     * Tests student accepting successful application.
-     * 
-     * Preconditions: Application status "Successful"
-     * Expected Result: Status "Accepted", slot decremented
-     */
-    @Test
-    public void testStudentAcceptsOffer() {
-        // Arrange
-        Application app = applicationManager.submitApplication(testStudent, testInternship);
-        app.updateStatus("Successful");
-        int initialSlots = testInternship.getAvailableSlots();
-        
-        // Act
-        app.updateStatus("Accepted");
-        testInternship.decrementSlot(); // System should do this
-        
-        // Assert
+        // Accept application
+        boolean accepted = applicationManager.acceptInternshipPlacement(testStudent, app);
+        assertTrue("Application should be accepted", accepted);
         assertEquals("Status should be Accepted", "Accepted", app.getStatus());
-        assertEquals("Available slots should decrease", initialSlots - 1, testInternship.getAvailableSlots());
     }
     
     /**
-     * UT-APP-007: Request Withdrawal
-     * 
-     * Tests student requesting withdrawal.
-     * 
-     * Preconditions: Student has active application
-     * Expected Result: Withdrawal flag set, status unchanged
+     * Test Case: UT-APP-007
+     * Verify withdrawal request handling
      */
     @Test
-    public void testRequestWithdrawal() {
-        // Arrange
-        Application app = applicationManager.submitApplication(testStudent, testInternship);
-        assertFalse("Initially no withdrawal requested", app.isWithdrawalRequested());
+    public void testWithdrawalRequest() {
+        // Submit and accept application
+        applicationManager.submitApplication(testStudent, testInternship);
+        Application app = applicationManager.getApplicationsByStudent(testStudent).get(0);
+        applicationManager.updateApplicationStatus(app, "Successful");
+        applicationManager.acceptInternshipPlacement(testStudent, app);
         
-        // Act
-        app.markWithdrawalRequested();
-        
-        // Assert
+        // Request withdrawal
+        applicationManager.handleWithdrawal(app);
         assertTrue("Withdrawal should be requested", app.isWithdrawalRequested());
-        assertEquals("Status should remain Pending", "Pending", app.getStatus());
     }
     
     /**
-     * UT-APP-008: Approve Withdrawal
-     * 
-     * Tests staff approving withdrawal.
-     * 
-     * Preconditions: Application has withdrawal request
-     * Expected Result: Application removed, student freed
+     * Test Case: UT-APP-008
+     * Verify withdrawal approval by staff
      */
     @Test
-    public void testApproveWithdrawal() {
-        // Arrange
-        Application app = applicationManager.submitApplication(testStudent, testInternship);
-        app.markWithdrawalRequested();
+    public void testWithdrawalApproval() {
+        // Submit, accept, and request withdrawal
+        applicationManager.submitApplication(testStudent, testInternship);
+        Application app = applicationManager.getApplicationsByStudent(testStudent).get(0);
+        applicationManager.updateApplicationStatus(app, "Successful");
+        applicationManager.acceptInternshipPlacement(testStudent, app);
+        applicationManager.handleWithdrawal(app);
         
-        // Act
-        applicationManager.approveWithdrawal(app);
+        // Staff approves withdrawal
+        applicationManager.approveWithdrawal(app, internshipManager);
         
-        // Assert
-        assertNull("Student activeApplication should be cleared", testStudent.getActiveApplication());
-        // Additional assertions depend on whether application is removed from lists
+        // Application should be removed from the system
+        java.util.List<Application> remainingApps = applicationManager.getApplicationsByStudent(testStudent);
+        assertEquals("Student should have no applications after withdrawal", 0, remainingApps.size());
     }
 }
+
